@@ -42,7 +42,6 @@ export interface AvaliacaoEstudante {
   turmaId: TurmaId;
   ucId: UCId;
   rubricaId: string;
-  // Mapeia o id do critério para o nível selecionado (NEA, APO, etc.)
   notas: {
     [criterioId: string]: NivelDesempenho | null;
   };
