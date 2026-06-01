@@ -139,65 +139,40 @@ function calculateGradeWithoutRecovery(unit: CurricularUnit): number {
  */
 export function getDefaultCapacitiesForUC(ucNameOrCode: string): { code: string; title: string }[] {
   const norm = (ucNameOrCode || "").toUpperCase();
-  if (norm.includes("TORNO") || norm.includes("TORN")) {
+  if (norm.includes("FUSI") || norm.includes("FUNDAMENTOS") || norm.includes("USINAGEM")) {
     return [
-      { code: "OP. 01", title: "FACEAR NO TORNO" },
-      { code: "OP. 02", title: "TORNEAR SUPERF. CILÍNDRICA NA PLACA UNIVERSAL" },
-      { code: "OP. 03", title: "FACEAR REBAIXO EXTERNO" },
-      { code: "OP. 04", title: "CHANFRAR NO TORNO" },
-      { code: "OP. 05", title: "FAZER FURO DE CENTRO NO TORNO" },
-      { code: "OP. 06", title: "TORNEAR REBAIXO INTERNO" },
-      { code: "OP. 07", title: "TORNEAR CANAL EXTERNO" },
-      { code: "OP. 08", title: "FURAR NO TORNO COM BROCA HELICOIDAL" },
-      { code: "OP. 09", title: "TORNEAR SUPERFÍCIE CÔNICA COM CARRO SUPERIOR" },
-      { code: "OP. 10", title: "RECARTILHAR NO TORNO" },
-      { code: "OP. 11", title: "ROSQUEAR MANUALMENTE NO TORNO" },
-      { code: "OP. 12", title: "AJUSTAR ENCAIXES CILÍNDRICOS E CÔNICOS" },
+      { code: "OP. 01", title: "RECONHECER MATERIAIS METÁLICOS E NÃO-METÁLICOS" },
+      { code: "OP. 02", title: "IDENTIFICAR FERRAMENTAS E ACESSÓRIOS DE CORTE" },
+      { code: "OP. 03", title: "DETERMINAR VELOCIDADE DE CORTE E ROTAÇÃO RPM" },
+      { code: "OP. 04", title: "APLICAR NORMAS DE SEGURANÇA E NR12 NA OFICINA" },
+      { code: "OP. 05", title: "INTERPRETAR LEIS DE FORMAÇÃO DOS CAVACOS" },
     ];
   }
-  if (norm.includes("METROLOGIA") || norm.includes("MET")) {
+  if (norm.includes("LIDT") || norm.includes("LEITURA") || norm.includes("DESENHO")) {
     return [
-      { code: "OP. 01", title: "LEITURA COM PAQUÍMETRO EM MILÍMETRO (0.05 E 0.02)" },
-      { code: "OP. 02", title: "LEITURA COM PAQUÍMETRO EM POLEGADA FRACIONÁRIA" },
-      { code: "OP. 03", title: "LEITURA COM MICRÔMETRO CENTESIMAL EXTERNO" },
-      { code: "OP. 04", title: "MEDIÇÃO ANGULAR COM GONIÔMETRO DE PRECISÃO" },
-      { code: "OP. 05", title: "VERIFICAÇÃO DE EXCENTRICIDADE COM RELÓGIO COMPARADOR" },
-      { code: "OP. 06", title: "UTILIZAÇÃO DE SUTAS E CALIBRADORES DE ROSCA" },
+      { code: "OP. 01", title: "INTERPRETAR PERSPECTIVAS E PROJEÇÕES ORTOGONAIS" },
+      { code: "OP. 02", title: "IDENTIFICAR LINHAS, SÍMBOLOS E LEGENDA PADRONIZADA" },
+      { code: "OP. 03", title: "LEITURA DE COTAGENS E ESCALAS DE DESENHOS" },
+      { code: "OP. 04", title: "INTERPRETAR DETALHES DE CORTES E SEÇÕES" },
+      { code: "OP. 05", title: "LEITURA DE INDICAÇÕES DE ACABAMENTO SUPERFICIAL E TOLERÂNCIAS" },
     ];
   }
-  if (norm.includes("FRESADORA") || norm.includes("FRES")) {
+  if (norm.includes("CRD") || norm.includes("CONTROLE") || norm.includes("DIMENSIONAL") || norm.includes("METROLOGIA")) {
     return [
-      { code: "OP. 01", title: "FRESAR SUPERFÍCIE PLANA E FACEAMENTO" },
-      { code: "OP. 02", title: "FRESAR REBOUTO E ESQUADREJAMENTO DE PEÇAS" },
-      { code: "OP. 03", title: "FRESAR RASGO DE CHAVETA RETANGULAR" },
-      { code: "OP. 04", title: "FRESAR CANAL EM 'T'" },
-      { code: "OP. 05", title: "FRESAR ÂNGULOS COM CABEÇOTE INCLINÁVEL" },
-      { code: "OP. 06", title: "FRESAR ENGRENAGEM COM APARELHO DIVISOR" },
-    ];
-  }
-  if (norm.includes("DESENHO") || norm.includes("DTM")) {
-    return [
-      { code: "OP. 01", title: "REPRESENTAÇÃO EM PROJEÇÃO ORTOGONAL (1º E 3º DIEDROS)" },
-      { code: "OP. 02", title: "APLICAÇÃO DE ESCALAS, LINHAS E LEGENDA PADRONIZADA" },
-      { code: "OP. 03", title: "COTAGEM E DIMENSIONAMENTO DE VISTAS" },
-      { code: "OP. 04", title: "DETALHAMENTO DE CORTES PLENOS E PARCIAIS" },
-      { code: "OP. 05", title: "LEITURA E INTERPRETAÇÃO DE TOLERÂNCIAS DIMENSIONAIS" },
-    ];
-  }
-  if (norm.includes("CÁLCULOS") || norm.includes("CÁLCULO") || norm.includes("TMC")) {
-    return [
-      { code: "OP. 01", title: "DETERMINAÇÃO DE ROTAÇÃO RPM E AVANÇOS DE CORTE" },
-      { code: "OP. 02", title: "CÁLCULOS DE ENCAIXES CILÍNDRICOS E TOLERÂNCIAS ISO" },
-      { code: "OP. 03", title: "ESPECIFICAÇÃO DE MATERIAIS DE CORTE" },
-      { code: "OP. 04", title: "CÁLCULO DE DIMENSÕES DE ROSCAS" },
+      { code: "OP. 01", title: "LEITURA E MEDIÇÃO COM PAQUÍMETRO EM MILÍMETRO E POLEGADA" },
+      { code: "OP. 02", title: "LEITURA E MEDIÇÃO COM MICRÔMETRO CENTESIMAL / MILESIMAL" },
+      { code: "OP. 03", title: "UTILIZAR RELÓGIO COMPARADOR E APALPADOR" },
+      { code: "OP. 04", title: "MEDIÇÃO COM GONIÔMETRO DE PRECISÃO" },
+      { code: "OP. 05", title: "VERIFICAÇÃO DA RUGOSIDADE DE SUPERFÍCES" },
     ];
   }
   if (norm.includes("CNC")) {
     return [
-      { code: "OP. 01", title: "PREPARO E DEFINIÇÃO DE COORDENADAS ZERO-PEÇA (G54)" },
-      { code: "OP. 02", title: "PROGRAMAÇÃO CNC EM CÓDIGO G (TORNEAMENTO G71, G70)" },
-      { code: "OP. 03", title: "PRESET DE FERRAMENTAS E SIMULAÇÃO DE PERCURSOS" },
-      { code: "OP. 04", title: "OPERAÇÃO E CONTROLE EM PAINEL FANUC/SIEMENS" },
+      { code: "OP. 01", title: "INTERPRETAR PROGRAMAS CNC BASEADOS EM CÓDIGOS G E M" },
+      { code: "OP. 02", title: "REALIZAR PRESET DE FERRAMENTAS E REFERENCIAMENTO ZERO-PEÇA" },
+      { code: "OP. 03", title: "SIMULAR PERCURSOS DE FERRAMENTA EM SOFTWARE CNC" },
+      { code: "OP. 04", title: "PREPARAR FIXAÇÃO E OPERAR O TORNO/CENTRO DE USINAGEM CNC" },
+      { code: "OP. 05", title: "OPERAR PAINEL CNC FANUC/SIEMENS E REALIZAR AJUSTES DE CORRETOR" },
     ];
   }
   return [
@@ -225,68 +200,78 @@ export function getInitialSENAIData(): CurricularUnit[] {
 
   return [
     {
-      id: "uc-met-init",
-      name: "Metrologia Dimensional",
-      code: "MUC-MET",
-      teacher: "Prof. André Valente",
-      workload: 60,
+      id: "uc-fusi-init",
+      name: "Fundamentos da Usinagem",
+      code: "FUSI",
+      teacher: "Prof. Vanderlei Souza",
+      workload: 80,
       absenceHours: 2,
       passingGrade: 60,
       maxGradeScale: 100,
       gradingMethod: GradingMethod.POINTS,
       evaluations: [
         {
-          id: "e-met-1",
-          title: "SA1 - Leitura com Paquímetro (0,02 e 0,05mm)",
-          description: "Prática com instrumentos reais na bancada de controle dimensional",
-          weight: 40,
-          maxGrade: 40,
-          gradeReceived: 36,
+          id: "e-fusi-1",
+          title: "SA1 - Teorias de Formação de Cavaco",
+          description: "Prática em conceitos físicos e ângulos do gume da ferramenta",
+          weight: 45,
+          maxGrade: 45,
+          gradeReceived: 38,
           status: EvaluationStatus.COMPLETED,
-          date: "2026-05-10",
+          date: "2026-05-12",
         },
         {
-          id: "e-met-2",
-          title: "SA2 - Medição com Micrômetro de Precisão",
-          description: "Leituras micrométricas em eixos torneados de encaixe",
-          weight: 30,
-          maxGrade: 30,
-          gradeReceived: 25,
+          id: "e-fusi-2",
+          title: "SA2 - Parâmetros de Velocidade e Avanço",
+          description: "Especificação de rotações para diferentes materiais e ferramentas",
+          weight: 55,
+          maxGrade: 55,
+          gradeReceived: 48,
           status: EvaluationStatus.COMPLETED,
-          date: "2026-05-24",
+          date: "2026-05-25",
         }
       ],
       hasRecovery: false,
       recoveryGrade: null,
-      notes: "Excelente precisão nas leituras dimensionais de micrômetros externos.",
-      capacidadesTecnicas: getCaps("MUC-MET")
+      notes: "Sabe aplicar perfeitamente as leis fundamentais de corte de metais.",
+      capacidadesTecnicas: getCaps("FUSI")
     },
     {
-      id: "uc-torn-init",
-      name: "Torno Mecânico Convencional",
-      code: "MUC-TORN",
-      teacher: "Prof. Vanderlei Souza",
-      workload: 180,
-      absenceHours: 6,
+      id: "uc-lidt-init",
+      name: "Leitura e Interpretação de Desenho Técnico",
+      code: "LIDT",
+      teacher: "Prof. Thiago Ferreira",
+      workload: 100,
+      absenceHours: 4,
       passingGrade: 60,
       maxGradeScale: 100,
       gradingMethod: GradingMethod.POINTS,
       evaluations: [
         {
-          id: "e-torn-1",
-          title: "SA1 - Torneamento Cilíndrico e Faceamento",
-          description: "Rebaixos de encaixe com tolerância de centésimos de milímetro",
+          id: "e-lidt-1",
+          title: "SA1 - Projeção Ortogonal de Peças Mecânicas",
+          description: "Determinação de 1º e 3º diédros na prancheta de desenho",
+          weight: 50,
+          maxGrade: 50,
+          gradeReceived: 45,
+          status: EvaluationStatus.COMPLETED,
+          date: "2026-05-14",
+        },
+        {
+          id: "e-lidt-2",
+          title: "SA2 - Cotagem e Leitura de Desenho de Conjunto",
+          description: "Interpretação de desenhos montados com listagem de peças",
           weight: 50,
           maxGrade: 50,
           gradeReceived: 42,
           status: EvaluationStatus.COMPLETED,
-          date: "2026-05-15",
+          date: "2026-05-28",
         }
       ],
       hasRecovery: false,
       recoveryGrade: null,
-      notes: "Uso consciente e seguro do torno mecânico convencional.",
-      capacidadesTecnicas: getCaps("MUC-TORN")
+      notes: "Excelente interpretação espacial e respeito aos padrões ABNT de linhas.",
+      capacidadesTecnicas: getCaps("LIDT")
     }
   ];
 }
@@ -294,9 +279,29 @@ export function getInitialSENAIData(): CurricularUnit[] {
 export function getInitialSENAITurmas(): Turma[] {
   const defaultSubjects: SubjectTemplate[] = [
     {
-      id: "temp-met",
-      name: "Metrologia Dimensional",
-      code: "MUC-MET",
+      id: "temp-fusi",
+      name: "Fundamentos da Usinagem",
+      code: "FUSI",
+      teacher: "Prof. Vanderlei Souza",
+      workload: 80,
+      passingGrade: 60,
+      maxGradeScale: 100,
+      gradingMethod: GradingMethod.POINTS,
+    },
+    {
+      id: "temp-lidt",
+      name: "Leitura e Interpretação de Desenho Técnico",
+      code: "LIDT",
+      teacher: "Prof. Thiago Ferreira",
+      workload: 100,
+      passingGrade: 60,
+      maxGradeScale: 100,
+      gradingMethod: GradingMethod.POINTS,
+    },
+    {
+      id: "temp-crd",
+      name: "Controle Dimensional",
+      code: "CRD",
       teacher: "Prof. André Valente",
       workload: 60,
       passingGrade: 60,
@@ -304,54 +309,14 @@ export function getInitialSENAITurmas(): Turma[] {
       gradingMethod: GradingMethod.POINTS,
     },
     {
-      id: "temp-torn",
-      name: "Torno Mecânico Convencional",
-      code: "MUC-TORN",
-      teacher: "Prof. Vanderlei Souza",
-      workload: 180,
-      passingGrade: 60,
-      maxGradeScale: 100,
-      gradingMethod: GradingMethod.POINTS,
-    },
-    {
-      id: "temp-dtm",
-      name: "Desenho Técnico Mecânico",
-      code: "MUC-DTM",
-      teacher: "Prof. Thiago Ferreira",
-      workload: 80,
-      passingGrade: 60,
-      maxGradeScale: 10,
-      gradingMethod: GradingMethod.WEIGHTED,
-    },
-    {
-      id: "temp-fres",
-      name: "Fresadora Convencional",
-      code: "MUC-FRES",
-      teacher: "Prof. Vanderlei Souza",
-      workload: 140,
-      passingGrade: 60,
-      maxGradeScale: 100,
-      gradingMethod: GradingMethod.POINTS,
-    },
-    {
-      id: "temp-tmc",
-      name: "Tecnologia Mecânica e Cálculos",
-      code: "MUC-TMC",
-      teacher: "Prof. Carlos Eduardo",
-      workload: 60,
-      passingGrade: 60,
-      maxGradeScale: 100,
-      gradingMethod: GradingMethod.POINTS,
-    },
-    {
       id: "temp-cnc",
-      name: "Máquinas Operatrizes CNC",
-      code: "MUC-CNC",
+      name: "Programação e Operação CNC",
+      code: "CNC",
       teacher: "Prof. Roberto Mendes",
       workload: 120,
       passingGrade: 60,
-      maxGradeScale: 10,
-      gradingMethod: GradingMethod.WEIGHTED,
+      maxGradeScale: 100,
+      gradingMethod: GradingMethod.POINTS,
     }
   ];
 
@@ -369,7 +334,6 @@ export function getInitialSENAITurmas(): Turma[] {
   const createUnitsForStudent = (studentName: string) => {
     return defaultSubjects.map(sub => {
       const code = sub.code || "";
-      const isMetOrTorn = code === "MUC-MET" || code === "MUC-TORN";
       return {
         id: `uc-${sub.id}-${studentName.toLowerCase().replace(/\s+/g, '-')}`,
         name: sub.name,
@@ -384,11 +348,20 @@ export function getInitialSENAITurmas(): Turma[] {
           {
             id: `eval-${sub.id}-1`,
             title: "SA1 - Atividade Prática Laboratorial",
-            weight: sub.gradingMethod === GradingMethod.POINTS ? sub.maxGradeScale : 100,
-            maxGrade: sub.maxGradeScale,
-            gradeReceived: Math.floor(sub.maxGradeScale * 0.75) + Math.floor(Math.random() * (sub.maxGradeScale * 0.15)),
+            weight: 50,
+            maxGrade: 50,
+            gradeReceived: Math.floor(50 * 0.75) + Math.floor(Math.random() * (50 * 0.2)),
             status: EvaluationStatus.COMPLETED,
             date: "2026-05-18"
+          },
+          {
+            id: `eval-${sub.id}-2`,
+            title: "SA2 - Avaliação de Conhecimento",
+            weight: 50,
+            maxGrade: 50,
+            gradeReceived: Math.floor(50 * 0.70) + Math.floor(Math.random() * (50 * 0.25)),
+            status: EvaluationStatus.COMPLETED,
+            date: "2026-05-28"
           }
         ],
         hasRecovery: false,

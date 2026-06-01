@@ -31,7 +31,6 @@ import { getInitialSENAIData, getInitialSENAITurmas, determineUnitStatus, calcul
 import StatsDashboard from "./components/StatsDashboard";
 import SubjectCard from "./components/SubjectCard";
 import SubjectDetailModal from "./components/SubjectDetailModal";
-import DemonstracoesPanel from "./components/DemonstracoesPanel";
 
 const LOCAL_STORAGE_KEY = "boletim_senai_data_v2";
 
@@ -40,7 +39,12 @@ export default function App() {
   const [selectedTurmaId, setSelectedTurmaId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [isManagingRegistry, setIsManagingRegistry] = useState<boolean>(false);
-  const [activeView, setActiveView] = useState<"boletim" | "demonstracoes">("demonstracoes");
+  const [activeView, setActiveView] = useState<"boletim" | "demonstracoes">("boletim");
+
+  // Estados para modal de cadastro de aluno com nome e menu de escolha da turma
+  const [showQuickAddStudentModal, setShowQuickAddStudentModal] = useState<boolean>(false);
+  const [quickStudentName, setQuickStudentName] = useState<string>("");
+  const [quickStudentTurmaId, setQuickStudentTurmaId] = useState<string>("");
 
   const [selectedUnit, setSelectedUnit] = useState<CurricularUnit | null>(null);
   
@@ -302,6 +306,28 @@ export default function App() {
     if (selectedTurmaId === turmaId) {
       setSelectedStudentId(newStd.id);
     }
+  };
+
+  const handleRegisterStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickStudentName.trim() || !quickStudentTurmaId) return;
+
+    const targetTurma = turmas.find(t => t.id === quickStudentTurmaId);
+    if (!targetTurma) return;
+
+    // RA format standard: USI-XX sequencial count
+    const nextIndex = (targetTurma.students?.length || 0) + 1;
+    const paddedIndex = nextIndex < 10 ? `0${nextIndex}` : `${nextIndex}`;
+    const generatedRA = `2026-USI-${paddedIndex}`;
+
+    // Add student with automatically instantiated classes
+    handleQuickAddStudentToTurma(quickStudentTurmaId, quickStudentName.trim(), generatedRA);
+
+    // Reset fields and focus
+    setQuickStudentName("");
+    setShowQuickAddStudentModal(false);
+    setIsManagingRegistry(false); // return to bulletin card view
+    setSelectedTurmaId(quickStudentTurmaId);
   };
 
   const handleQuickRemoveStudentFromTurma = (turmaId: string, studentId: string) => {
@@ -682,144 +708,97 @@ export default function App() {
           </button>
         </div>
 
-        {/* CONTEXTO ATIVO: TURMA E ALUNO dropdowns */}
-        <div className="px-6 pb-6 pt-2 border-b border-white/10 space-y-4 shrink-0 bg-black/10">
-          <div className="space-y-1">
-            <span className="block text-[8px] text-[#A2C7E5] uppercase font-bold tracking-widest font-mono">Turma Escola</span>
-            <select
-              value={selectedTurmaId}
-              onChange={(e) => handleSelectTurma(e.target.value)}
-              className="w-full bg-white/10 text-white border border-white/20 text-xs px-2.5 py-1.5 outline-none rounded-none font-mono cursor-pointer hover:bg-white/15 transition-all text-white"
-            >
-              {turmas.map(t => (
-                <option key={t.id} value={t.id} className="text-slate-800 bg-white font-sans">
-                  {t.code} • {t.shift}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1">
-            <span className="block text-[8px] text-[#A2C7E5] uppercase font-bold tracking-widest font-mono">Estudante Ativo</span>
-            <select
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="w-full bg-white/10 text-white border border-white/20 text-xs px-2.5 py-1.5 outline-none rounded-none font-mono cursor-pointer hover:bg-white/15 transition-all text-white"
-            >
-              {activeTurma?.students && activeTurma.students.length > 0 ? (
-                activeTurma.students.map(s => (
-                  <option key={s.id} value={s.id} className="text-slate-800 bg-white font-sans">
-                    {s.name} ({s.ra})
-                  </option>
-                ))
-              ) : (
-                <option value="" className="text-slate-800 bg-white font-sans">Sem alunos cadastrados</option>
-              )}
-            </select>
-          </div>
+        {/* CONFIGURAÇÃO E CADASTROS */}
+        <div className="px-6 pb-6 pt-4 border-b border-white/10 space-y-3 shrink-0 bg-black/10">
+          <button
+            onClick={() => {
+              if (turmas.length > 0) {
+                setQuickStudentTurmaId(selectedTurmaId || turmas[0].id);
+              }
+              setShowQuickAddStudentModal(true);
+            }}
+            type="button"
+            className="w-full bg-[#E57A00] hover:bg-[#c26700] text-white text-[10px] font-bold uppercase tracking-widest font-mono py-2.5 rounded-none transition-colors duration-200 select-none cursor-pointer text-center block shadow-sm"
+          >
+            👤 Cadastro de Aluno
+          </button>
 
           <button
             onClick={() => setIsManagingRegistry(true)}
             type="button"
-            className="w-full bg-[#E57A00] hover:bg-[#c26700] text-white text-[10px] font-bold uppercase tracking-widest font-mono py-2 rounded-none transition-colors duration-200 mt-2 select-none cursor-pointer text-center block shadow-xs"
+            className="w-full bg-white/15 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest font-mono py-2.5 rounded-none transition-colors duration-200 select-none cursor-pointer text-center block"
           >
             ✏️ Gerenciar Cadastro
           </button>
         </div>
 
         <nav className="flex-1 px-4 space-y-1 mt-4">
-          <p className="text-[10px] text-white/50 uppercase tracking-wider font-semibold px-4 pb-2 font-mono">Modo de Exibição</p>
+          <p className="text-[10px] text-white/50 uppercase tracking-wider font-semibold px-4 pb-2 font-mono">Filtros do Boletim</p>
           <button
-            onClick={() => { setActiveView("demonstracoes"); setIsManagingRegistry(false); }}
+            onClick={() => { setStatusFilter("ALL"); setIsManagingRegistry(false); }}
             type="button"
-            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors cursor-pointer ${
-              activeView === "demonstracoes" ? "bg-white text-[#005DA5] font-extrabold shadow-sm" : "hover:bg-white/5 text-white/80 font-medium"
+            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+              !isManagingRegistry && statusFilter === "ALL" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
             }`}
           >
-            <span className="text-sm">🛠️</span>
-            <span className="text-xs uppercase tracking-tight font-mono">Demonstrações</span>
-          </button>
-          <button
-            onClick={() => { setActiveView("boletim"); setIsManagingRegistry(false); }}
-            type="button"
-            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors cursor-pointer ${
-              activeView === "boletim" ? "bg-white text-[#005DA5] font-extrabold shadow-sm" : "hover:bg-white/5 text-white/80 font-medium"
-            }`}
-          >
-            <span className="text-sm">📋</span>
-            <span className="text-xs uppercase tracking-tight font-mono">Boletim Escolar</span>
-          </button>
-
-          {activeView === "boletim" && (
-            <div className="mt-6 pt-4 border-t border-white/10 space-y-1">
-              <p className="text-[10px] text-white/50 uppercase tracking-wider font-semibold px-4 pb-2 font-mono">Filtros Boletim</p>
-              <button
-                onClick={() => { setStatusFilter("ALL"); setIsManagingRegistry(false); }}
-                type="button"
-                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                  !isManagingRegistry && statusFilter === "ALL" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ALL" ? "bg-white" : "bg-white/40"}`}></div>
-                  <span>Todas as Notas</span>
-                </div>
-                <span className="text-xs bg-white/15 px-2 py-0.5 rounded font-mono text-white/90">{units.length}</span>
-              </button>
-
-              <button
-                onClick={() => { setStatusFilter("ONGOING"); setIsManagingRegistry(false); }}
-                type="button"
-                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                  !isManagingRegistry && statusFilter === "ONGOING" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ONGOING" ? "bg-sky-400" : "bg-white/40"}`}></div>
-                  <span>Cursando</span>
-                </div>
-              </button>
-
-              <button
-                onClick={() => { setStatusFilter("PASSED"); setIsManagingRegistry(false); }}
-                type="button"
-                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                  !isManagingRegistry && statusFilter === "PASSED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "PASSED" ? "bg-emerald-400" : "bg-white/40"}`}></div>
-                  <span>Aprovados</span>
-                </div>
-              </button>
-
-              <button
-                onClick={() => { setStatusFilter("RECOVERY"); setIsManagingRegistry(false); }}
-                type="button"
-                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                  !isManagingRegistry && statusFilter === "RECOVERY" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "RECOVERY" ? "bg-amber-400" : "bg-white/40"}`}></div>
-                  <span>Em Recuperação</span>
-                </div>
-              </button>
-
-              <button
-                onClick={() => { setStatusFilter("FAILED"); setIsManagingRegistry(false); }}
-                type="button"
-                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-                  !isManagingRegistry && statusFilter === "FAILED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "FAILED" ? "bg-red-400" : "bg-white/40"}`}></div>
-                  <span>Retidos</span>
-                </div>
-              </button>
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ALL" ? "bg-white" : "bg-white/40"}`}></div>
+              <span>Todas as Notas</span>
             </div>
-          )}
+            <span className="text-xs bg-white/15 px-2 py-0.5 rounded font-mono text-white/90">{units.length}</span>
+          </button>
+
+          <button
+            onClick={() => { setStatusFilter("ONGOING"); setIsManagingRegistry(false); }}
+            type="button"
+            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+              !isManagingRegistry && statusFilter === "ONGOING" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ONGOING" ? "bg-sky-400" : "bg-white/40"}`}></div>
+              <span>Cursando</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => { setStatusFilter("PASSED"); setIsManagingRegistry(false); }}
+            type="button"
+            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+              !isManagingRegistry && statusFilter === "PASSED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "PASSED" ? "bg-emerald-400" : "bg-white/40"}`}></div>
+              <span>Aprovados</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => { setStatusFilter("RECOVERY"); setIsManagingRegistry(false); }}
+            type="button"
+            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+              !isManagingRegistry && statusFilter === "RECOVERY" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "RECOVERY" ? "bg-amber-400" : "bg-white/40"}`}></div>
+              <span>Em Recuperação</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => { setStatusFilter("FAILED"); setIsManagingRegistry(false); }}
+            type="button"
+            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+              !isManagingRegistry && statusFilter === "FAILED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "FAILED" ? "bg-red-400" : "bg-white/40"}`}></div>
+              <span>Retidos</span>
+            </div>
+          </button>
         </nav>
 
         <div className="p-6 bg-black/15 text-xs text-white/50 text-center uppercase tracking-widest font-mono shrink-0">
@@ -830,22 +809,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0">
         
-        {activeView === "demonstracoes" ? (
-          <DemonstracoesPanel
-            turmas={turmas}
-            selectedTurmaId={selectedTurmaId}
-            onSelectTurma={(id) => {
-              setSelectedTurmaId(id);
-              const t = turmas.find(x => x.id === id);
-              if (t && t.students && t.students.length > 0) {
-                setSelectedStudentId(t.students[0].id);
-              }
-            }}
-            onSaveStudentCapacity={handleSaveStudentCapacity}
-            onAddStudentToTurma={handleQuickAddStudentToTurma}
-            onRemoveStudentFromTurma={handleQuickRemoveStudentFromTurma}
-          />
-        ) : isManagingRegistry ? (
+        {isManagingRegistry ? (
           
           /* =========================================================================
              A. PAINEL INSTITUCIONAL DE CADASTRO (TURMAS, ALUNOS & MATRIZ CURRICULAR)
@@ -1225,25 +1189,62 @@ export default function App() {
              ========================================================================= */
           <>
             {/* Header Elegante */}
-            <header className="h-auto md:h-20 bg-white border-b border-[#E1E4E8] px-6 py-4 md:py-0 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-              <div className="text-center sm:text-left">
+            <header className="h-auto md:h-20 bg-white border-b border-[#E1E4E8] px-6 py-4 md:py-0 md:px-8 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0">
+              <div className="text-center md:text-left py-2">
                 <h1 className="text-xl font-bold text-[#1A1C1E] tracking-tight">Boletim de Avaliações</h1>
                 <p className="text-sm text-[#6C757D]">
                   {activeStudent ? `${activeStudent.name} • RA: ${activeStudent.ra}` : "Nenhum estudante matriculado nesta turma"}
                 </p>
               </div>
+
+              {/* Controles de Seleção Integrados no Topo (Turma/Estudante) de Usinagem SENAI */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <div className="w-full sm:w-44 text-left">
+                  <span className="block text-[8px] text-[#6C757D] uppercase font-bold tracking-widest font-mono mb-1">Turma</span>
+                  <select
+                    value={selectedTurmaId}
+                    onChange={(e) => handleSelectTurma(e.target.value)}
+                    className="w-full bg-[#F8F9FA] border border-[#E1E4E8] text-xs px-2.5 py-1.5 outline-none rounded-none font-mono cursor-pointer hover:bg-[#F1F3F5] transition-all text-slate-800"
+                  >
+                    {turmas.map(t => (
+                      <option key={t.id} value={t.id} className="text-slate-800 bg-white font-sans">
+                        {t.name.replace("Mecânico de Usinagem - ", "")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="w-full sm:w-56 text-left">
+                  <span className="block text-[8px] text-[#6C757D] uppercase font-bold tracking-widest font-mono mb-1">Estudante Ativo</span>
+                  <select
+                    value={selectedStudentId}
+                    onChange={(e) => setSelectedStudentId(e.target.value)}
+                    className="w-full bg-[#F8F9FA] border border-[#E1E4E8] text-xs px-2.5 py-1.5 outline-none rounded-none font-mono cursor-pointer hover:bg-[#F1F3F5] transition-all text-slate-800"
+                  >
+                    {activeTurma?.students && activeTurma.students.length > 0 ? (
+                      activeTurma.students.map(s => (
+                        <option key={s.id} value={s.id} className="text-slate-800 bg-white font-sans">
+                          {s.name} ({s.ra})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" className="text-slate-800 bg-white font-sans">Sem alunos cadastrados</option>
+                    )}
+                  </select>
+                </div>
+              </div>
               
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-[10px] uppercase font-bold text-[#6C757D] tracking-wider mb-0.5">Aproveitamento Geral</p>
                   <p className="text-2xl font-mono font-bold text-[#005DA5]">{overallAveragePercent.toFixed(1)}%</p>
                 </div>
                 <div 
-                  className="w-10 h-10 rounded-full bg-[#E9ECEF] flex items-center justify-center font-bold text-[#495057] text-sm border border-[#E1E4E8] select-none cursor-pointer hover:bg-[#DDE1E5]"
+                  className="w-10 h-10 rounded-full bg-[#E9ECEF] flex items-center justify-center font-bold text-[#495057] text-sm border border-[#E1E4E8] select-none cursor-pointer hover:bg-[#DDE1E5] shrink-0"
                   title="Mudar cadastro"
                   onClick={() => setIsManagingRegistry(true)}
                 >
-                  {activeStudent ? activeStudent.name.substr(0, 2).toUpperCase() : "JS"}
+                  {activeStudent ? activeStudent.name.substr(0, 2).toUpperCase() : "US"}
                 </div>
               </div>
             </header>
@@ -1562,9 +1563,9 @@ export default function App() {
             {/* Status Bar / Academic Footer */}
             <footer className="h-10 bg-white border-t border-[#E1E4E8] px-6 sm:px-8 flex items-center justify-between text-[10px] text-[#9BA1A7] uppercase tracking-[0.2em] font-mono shrink-0 select-none">
               <div className="flex items-center gap-4">
-                <span>Unidade: Curitiba - PR</span>
+                <span>Unidade: Monte Alto - SP</span>
                 <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline">Turma: {activeTurma ? activeTurma.code : "ELE-2026-T1"}</span>
+                <span className="hidden sm:inline">Turma: {activeTurma ? activeTurma.code : "USI-2026-MA"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#28A745]"></span>
@@ -1583,6 +1584,75 @@ export default function App() {
           onClose={() => setSelectedUnit(null)} 
           onSave={handleUpdateUnit} 
         />
+      )}
+
+      {/* Modal de Cadastro de Aluno com nome e menu de escolha da turma */}
+      {showQuickAddStudentModal && (
+        <div className="fixed inset-0 bg-[#1A1C1E]/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white max-w-md w-full p-6 border border-[#E1E4E8] shadow-lg flex flex-col space-y-4 rounded-none animate-in scale-in duration-200">
+            
+            <div className="flex justify-between items-center pb-2 border-b border-[#E1E4E8]">
+              <div className="flex items-center gap-2">
+                <Users className="text-[#005DA5]" size={18} />
+                <h3 className="font-bold text-sm uppercase tracking-wider text-[#1A1C1E] font-mono">Cadastrar Novo Aluno</h3>
+              </div>
+              <button 
+                onClick={() => setShowQuickAddStudentModal(false)}
+                className="p-1 text-[#6C757D] hover:text-[#1A1C1E] text-lg font-mono cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleRegisterStudent} className="space-y-4 text-xs">
+              
+              <div className="space-y-1">
+                <label className="block font-bold text-[#6C757D] uppercase tracking-wider text-[10px] font-mono">Nome do Aluno</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="Ex: João Silva da Cruz"
+                  value={quickStudentName}
+                  onChange={(e) => setQuickStudentName(e.target.value)}
+                  className="w-full bg-[#F8F9FA] border border-[#E1E4E8] p-2.5 text-slate-800 outline-none text-xs rounded-none font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-[#6C757D] uppercase tracking-wider text-[10px] font-mono">Turma de Destino</label>
+                <select
+                  value={quickStudentTurmaId}
+                  onChange={(e) => setQuickStudentTurmaId(e.target.value)}
+                  className="w-[#100%] bg-[#F8F9FA] border border-[#E1E4E8] p-2.5 text-slate-800 outline-none text-xs rounded-none font-mono cursor-pointer"
+                >
+                  {turmas.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button 
+                  type="button"
+                  onClick={() => setShowQuickAddStudentModal(false)}
+                  className="px-4 py-2 bg-[#E9ECEF] hover:bg-[#DDE1E5] text-[#495057] font-mono text-[11px] font-bold uppercase tracking-wider cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 bg-[#005DA5] hover:bg-[#004e8a] text-white font-mono text-[11px] font-bold uppercase tracking-wider cursor-pointer shadow-xs"
+                >
+                  Cadastrar Aluno
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
       )}
 
     </div>
