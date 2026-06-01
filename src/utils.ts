@@ -15,23 +15,18 @@ export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
   { id: 'fusi_cap11', ucId: 'FUSI', codigo: 'CAP. 11', descricao: 'Aplicar os procedimentos de refrigeração nos processos de torneamento e fresagem convencional.' },
 
   // --- CONTROLE DIMENSIONAL (CRD) ---
-  { id: 'crd_cap1', ucId: 'CRD', codigo: 'CAP. 01', descricao: 'Identificar a importância da metrologia na indústria metalmecânica.' },
-  { id: 'crd_cap2', ucId: 'CRD', codigo: 'CAP. 02', descricao: 'Medir peças com escala.' },
-  { id: 'crd_cap3', ucId: 'CRD', codigo: 'CAP. 03', descricao: 'Medir peças com trena.' },
-  { id: 'crd_cap4', ucId: 'CRD', codigo: 'CAP. 04', descricao: 'Medir peças com paquímetro.' },
-  { id: 'crd_cap5', ucId: 'CRD', codigo: 'CAP. 05', descricao: 'Medir peças no sistema métrico com micrômetro.' },
-  { id: 'crd_cap6', ucId: 'CRD', codigo: 'CAP. 06', descricao: 'Verificar dimensões e perfis com verificadores.' },
-  { id: 'crd_cap7', ucId: 'CRD', codigo: 'CAP. 07', descricao: 'Medir por comparação com relógio apalpador e comparador.' },
-  { id: 'crd_cap8', ucId: 'CRD', codigo: 'CAP. 08', descricao: 'Medir peças com goniômetro.' }
+  { id: 'crd_cap1', ucId: 'CRD', codigo: 'CAP. 01', descricao: 'Interpretar desenhos técnicos de peças a partir de projetos da metalmecânica.' },
+  { id: 'crd_cap2', ucId: 'CRD', codigo: 'CAP. 02', descricao: 'Elaborar croquis de peças em projeção ortogonal e em perspectiva à mão livre, a partir de modelos.' },
+  { id: 'crd_cap3', ucId: 'CRD', codigo: 'CAP. 03', descricao: 'Interpretar desenho técnico de montagem de conjunto e subconjuntos a partir de projetos da metalmecânica.' },
+  { id: 'crd_cap4', ucId: 'CRD', codigo: 'CAP. 04', descricao: 'Interpretar tolerância dimensional, geométrica e de acabamento superficial em desenho técnico.' }
 ];
 
 export const getDescricaoRubrica = (capId: string, nivel: string): string => {
-  // Descrições base voltadas à metrologia e usinagem
   const descricoes: Record<string, string> = {
-    NEA: 'Não atendeu aos critérios mínimos de tolerância, segurança ou uso correto do instrumento/equipamento.',
-    APO: 'Demonstra execução inicial dependendo de apoio ou correção constante do instrutor técnico.',
-    PAR: 'Alcançou o objetivo de medição ou usinagem parcialmente, com desvios aceitáveis na calibração/processo.',
-    AUT: 'Demonstra total autonomia, precisão centesimal/dimensional absoluta e domínio completo do critério.'
+    NEA: 'Não atendeu aos critérios mínimos de leitura geométrica, interpretação de normas técnicas ou especificações do projeto.',
+    APO: 'Identifica vistas elementares ou cotas simples apenas sob auxílio direto da instrução técnica.',
+    PAR: 'Analisa o desenho ou monta croquis de forma autônoma, restando dúvidas pontuais em tolerâncias complexas (GD&T) ou conjuntos.',
+    AUT: 'Demonstra leitura imediata, domínio absoluto de projeções, simbologias de rugosidade e interpretação rigorosa de projetos sem erros.'
   };
   return descricoes[nivel] || '';
 };
