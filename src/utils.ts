@@ -33,7 +33,7 @@ export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
 
 export const getDescricaoRubrica = (capId: string, nivel: string): string => {
   const descricoes: Record<string, string> = {
-    NEA: 'Não atendeu aos critérios mínimos estabelecidos para a capacidade técnica analisada.',
+    NSA: 'Não Satisfez os Critérios mínimos exigidos para a validação desta capacidade técnica.',
     APO: 'Demonstra execução ou interpretação com dependência direta e contínua do instrutor.',
     PAR: 'Conclui a análise ou processo com autonomia parcial, cometendo erros pequenos em detalhes complexos.',
     AUT: 'Demonstra domínio pleno, rigor operacional, precisão técnica e total independência.'
