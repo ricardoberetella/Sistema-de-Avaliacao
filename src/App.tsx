@@ -1,254 +1,201 @@
 import React, { useState } from 'react';
-import { TURMAS, UNIDADES_CURRICULARES, RUBRICAS_FICHAS, CRONOGRAMA_FUSI } from './utils';
-import { TurmaId, UCId, Estudante, AvaliacaoEstudante, NivelDesempenho } from './types';
-import SubjectCard from './components/SubjectCard';
+import { TurmaId, Aluno, OperacaoUsinagem } from './types';
+import { OPERACOES_FUSI } from './utils';
+import OperacaoCard from './components/OperacaoCard';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
-  const [ucSelecionada, setUcSelecionada] = useState<UCId | null>(null);
-  const [estudantes, setEstudantes] = useState<Estudante[]>([]);
+  const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [novoNome, setNovoNome] = useState('');
-  const [rubricaIdAtiva, setRubricaIdAtiva] = useState<string>('');
-  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoEstudante[]>([]);
-  const [exibirCronograma, setExibirCronograma] = useState<boolean>(false);
+  
+  // Estado para controlar qual card foi clicado para gerenciar os alunos individuais
+  const [opSelecionada, setOpSelecionada] = useState<OperacaoUsinagem | null>(null);
 
-  const fichasDisponiveis = RUBRICAS_FICHAS.filter(f => f.ucId === ucSelecionada);
+  const turmasDisponiveis: TurmaId[] = ['MA', 'MB', 'TA', 'TB'];
+  const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  React.useEffect(() => {
-    if (fichasDisponiveis.length > 0) {
-      setRubricaIdAtiva(fichasDisponiveis[0].id);
-    } else {
-      setRubricaIdAtiva('');
-    }
-  }, [ucSelecionada]);
-
-  const estudantesDaTurma = estudantes.filter(e => e.turmaId === turmaAtiva);
-  const rubricaAtual = RUBRICAS_FICHAS.find(r => r.id === rubricaIdAtiva);
-
-  const handleAddEstudante = (e: React.FormEvent) => {
+  const handleAddAluno = (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
 
-    const novoAluno: Estudante = {
+    const novoAluno: Aluno = {
       id: crypto.randomUUID(),
       nome: novoNome.trim().toUpperCase(),
-      turmaId: turmaAtiva
+      turmaId: turmaAtiva,
+      operacoesConcluidas: []
     };
 
-    setEstudantes(prev => [...prev, novoAluno]);
+    setAlunos(prev => [...prev, novoAluno]);
     setNovoNome('');
   };
 
-  const handleSelectNivel = (estudanteId: string, criterioId: string, nivel: NivelDesempenho) => {
-    if (!ucSelecionada || !rubricaIdAtiva) return;
-
-    setAvaliacoes(prev => {
-      const idx = prev.findIndex(a => 
-        a.estudanteId === estudanteId && 
-        a.turmaId === turmaAtiva && 
-        a.ucId === ucSelecionada && 
-        a.rubricaId === rubricaIdAtiva
-      );
-
-      if (idx > -1) {
-        const copia = [...prev];
-        const notaAtual = copia[idx].notas[criterioId];
-        copia[idx].notas[criterioId] = notaAtual === nivel ? null : nivel;
-        return copia;
-      } else {
-        return [
-          ...prev,
-          {
-            estudanteId,
-            turmaId: turmaAtiva,
-            ucId: ucSelecionada,
-            rubricaId: rubricaIdAtiva,
-            notas: { [criterioId]: nivel }
-          }
-        ];
-      }
-    });
+  const toggleOperacaoAluno = (alunoId: string, opId: string) => {
+    setAlunos(prev => prev.map(aluno => {
+      if (aluno.id !== alunoId) return aluno;
+      const jaConcluiu = aluno.operacoesConcluidas.includes(opId);
+      return {
+        ...aluno,
+        operacoesConcluidas: jaConcluiu
+          ? aluno.operacoesConcluidas.filter(id => id !== opId)
+          : [...aluno.operacoesConcluidas, opId]
+      };
+    }));
   };
 
-  const getNotaAtual = (estudanteId: string, criterioId: string): NivelDesempenho | null => {
-    const alignment = avaliacoes.find(a => 
-      a.estudanteId === estudanteId && 
-      a.turmaId === turmaAtiva && 
-      a.ucId === ucSelecionada && 
-      a.rubricaId === rubricaIdAtiva
-    );
-    return alignment ? alignment.notas[criterioId] || null : null;
+  const getContagemConcluidos = (opId: string) => {
+    return alunosDaTurma.filter(a => a.operacoesConcluidas.includes(opId)).length;
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6 text-slate-800 font-sans antialiased pb-24">
+    <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      <header className="relative mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            SISTEMA DE AVALIAÇÃO <span className="text-blue-600">RUBRICAS</span>
-          </h1>
-          <p className="text-sm text-slate-500 font-medium">Metodologia Ocupacional SENAI</p>
+      {/* CABEÇALHO AZUL IDÊNTICO AO DA IMAGEM image_e0fda8.png */}
+      <header className="bg-[#004fa3] px-8 py-5 flex flex-col md:flex-row items-center justify-between shadow-md text-white gap-4">
+        <div className="flex items-center gap-6">
+          {/* Logo Estilo SENAI */}
+          <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic">
+            SENAI
+          </div>
+          <div className="text-center md:text-left">
+            <h1 className="text-lg md:text-xl font-black uppercase tracking-wider">
+              Mecânico de Usinagem Convencional
+            </h1>
+            <p className="text-xs text-blue-200 font-bold uppercase tracking-widest mt-0.5">
+              Controle de Demonstrações
+            </p>
+          </div>
         </div>
 
-        <div className="flex bg-[#004488] p-1.5 rounded-2xl shadow-md inline-flex self-start sm:self-center">
-          {TURMAS.map((turma) => (
-            <button
-              key={turma.id}
-              onClick={() => setTurmaAtiva(turma.id)}
-              className={`px-5 py-2 text-sm font-black rounded-xl transition-all duration-150 ${
-                turmaAtiva === turma.id ? 'bg-white text-[#004488] shadow-sm' : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              {turma.id}
-            </button>
-          ))}
+        {/* Seletor de Turma e Logout da Imagem */}
+        <div className="flex items-center gap-4">
+          <div className="bg-[#003670] p-1 rounded-xl flex items-center shadow-inner">
+            {turmasDisponiveis.map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  setTurmaAtiva(t);
+                  setOpSelecionada(null);
+                }}
+                className={`px-4 py-1.5 rounded-lg text-xs font-black tracking-wide transition-all ${
+                  turmaAtiva === t
+                    ? 'bg-white text-[#004fa3] shadow'
+                    : 'text-blue-200 hover:text-white bg-transparent'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          {/* Botão de Saída Vermelho */}
+          <button className="bg-red-600 hover:bg-red-700 p-2.5 rounded-xl transition-colors shadow">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+          </button>
         </div>
       </header>
 
-      <main>
-        <div className="mb-6 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300">
-            Filtro: <span className="text-blue-700">{TURMAS.find(t => t.id === turmaAtiva)?.nome}</span>
-          </span>
-          {ucSelecionada && (
-            <div className="flex gap-4">
-              <button 
-                onClick={() => setExibirCronograma(!exibirCronograma)}
-                className="text-xs font-bold text-slate-600 bg-white border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 shadow-sm"
-              >
-                {exibirCronograma ? 'Ocultar Cronograma' : 'Ver Cronograma (60 Aulas)'}
-              </button>
-              <button onClick={() => setUcSelecionada(null)} className="text-xs font-bold text-blue-600 self-center hover:underline">
-                &larr; Voltar para as UCs
-              </button>
-            </div>
-          )}
+      {/* PAINEL INFERIOR E BARRA DE ADICIONAR ALUNO (image_e0fda8.png) */}
+      <main className="p-8 max-w-[1600px] mx-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-black italic text-[#004fa3] uppercase tracking-tight">
+              TURMA {turmaAtiva}
+            </h2>
+            <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
+              Painel
+            </span>
+          </div>
+
+          {/* Form de Cadastro com Input Borda Vermelha e Botão "ADD" */}
+          <form onSubmit={handleAddAluno} className="flex items-center gap-3 w-full sm:w-auto">
+            <input
+              type="text"
+              value={novoNome}
+              onChange={(e) => setNovoNome(e.target.value)}
+              placeholder="NOME DO ALUNO..."
+              className="w-full sm:w-64 h-[44px] px-4 bg-white text-slate-700 placeholder-slate-400 font-bold border-2 border-red-600 rounded-xl focus:outline-none shadow-sm text-xs tracking-wide"
+            />
+            <button
+              type="submit"
+              className="h-[44px] px-6 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl transition-colors tracking-wider uppercase shadow-sm"
+            >
+              ADD
+            </button>
+          </form>
         </div>
 
-        {!ucSelecionada ? (
-          <div>
-            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Unidades Curriculares</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {UNIDADES_CURRICULARES.map((uc) => (
-                <SubjectCard key={uc.id} uc={uc} onClick={() => setUcSelecionada(uc.id)} />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            
-            {/* Visualização Condicional do Cronograma Vinculado */}
-            {exibirCronograma && ucSelecionada === 'FUSI' && (
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-h-96 overflow-y-auto animate-fadeIn">
-                <h3 className="text-sm font-black text-slate-900 uppercase border-b border-slate-200 pb-2 mb-4 tracking-wider">
-                  Cronograma MSEP - Fundamentos da Usinagem
-                </h3>
-                <div className="space-y-3">
-                  {CRONOGRAMA_FUSI.map((item) => (
-                    <div key={item.aula} className="text-xs flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-2 gap-1">
-                      <span className="font-bold text-blue-700 min-w-[90px]">Aula {item.aula} ({item.data})</span>
-                      <span className="text-slate-700 flex-1 px-2 font-medium">{item.conteudo}</span>
-                      <span className="text-slate-500 italic bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{item.estrategia}</span>
-                    </div>
-                  ))}
+        {/* GRADE DE CARDS (GRID DE 4 COLUNAS EXATAMENTE COMO NA IMAGEM) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {OPERACOES_FUSI.map((op) => (
+            <OperacaoCard
+              key={op.id}
+              op={op}
+              concluidos={getContagemConcluidos(op.id)}
+              totalAlunos={alunosDaTurma.length}
+              onClick={() => setOpSelecionada(op)}
+            />
+          ))}
+        </div>
+
+        {/* MODAL / ÁREA LATERAL FLUTUANTE PARA MARCAR CONCLUSÃO DE OPERAÇÃO DO ALUNO */}
+        {opSelecionada && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+            <div className="bg-white w-full max-w-md rounded-[24px] shadow-xl overflow-hidden border border-slate-100">
+              <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
+                <div>
+                  <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{opSelecionada.numero} - {opSelecionada.maquina}</span>
+                  <h3 className="text-base font-black uppercase mt-1 leading-tight">{opSelecionada.titulo}</h3>
                 </div>
-              </div>
-            )}
-
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <form onSubmit={handleAddEstudante} className="flex items-center gap-3">
-                <input
-                  type="text"
-                  value={novoNome}
-                  onChange={(e) => setNovoNome(e.target.value)}
-                  placeholder="NOME DO ALUNO..."
-                  className="w-72 h-[52px] px-5 bg-white text-slate-700 placeholder-slate-400 font-bold border-2 border-red-600 rounded-[20px] focus:outline-none text-sm tracking-wide"
-                />
-                <button type="submit" className="h-[52px] px-8 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-[20px] tracking-wider uppercase active:scale-95">
-                  ADD
-                </button>
-              </form>
-
-              <div className="flex flex-col gap-1 w-full md:w-96">
-                <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Selecione a Rubrica Desejada:</label>
-                <select
-                  value={rubricaIdAtiva}
-                  onChange={(e) => setRubricaIdAtiva(e.target.value)}
-                  className="w-full h-[52px] px-4 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sm text-slate-700 focus:outline-none cursor-pointer"
+                <button 
+                  onClick={() => setOpSelecionada(null)}
+                  className="text-white/80 hover:text-white font-bold text-sm bg-black/10 px-2.5 py-1 rounded-lg"
                 >
-                  {fichasDisponiveis.map(ficha => (
-                    <option key={ficha.id} value={ficha.id}>{ficha.titulo}</option>
-                  ))}
-                </select>
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6 max-h-[400px] overflow-y-auto">
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-3">Marque os alunos que executaram a demonstração:</p>
+                
+                {alunosDaTurma.length === 0 ? (
+                  <p className="text-xs font-bold text-slate-400 text-center py-6">Nenhum aluno cadastrado nesta turma ainda.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alunosDaTurma.map((aluno) => {
+                      const concluido = aluno.operacoesConcluidas.includes(opSelecionada.id);
+                      return (
+                        <div 
+                          key={aluno.id}
+                          onClick={() => toggleOperacaoAluno(aluno.id, opSelecionada.id)}
+                          className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                            concluido 
+                              ? 'bg-blue-50 border-blue-400 text-blue-900 font-bold shadow-sm' 
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span className="text-xs uppercase tracking-wide">{aluno.nome}</span>
+                          <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                            concluido ? 'bg-[#004fa3] border-[#004fa3] text-white' : 'border-slate-300 bg-white'
+                          }`}>
+                            {concluido && <span className="text-[10px] font-black">✓</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button
+                  onClick={() => setOpSelecionada(null)}
+                  className="px-5 py-2 bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider"
+                >
+                  Confirmar
+                </button>
               </div>
             </div>
-
-            {rubricaAtual && (
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full table-fixed border-collapse">
-                    <thead className="bg-[#0f172a] text-white text-xs font-black uppercase tracking-wider">
-                      <tr>
-                        <th className="p-4 text-left w-64">REFERÊNCIA</th>
-                        <th className="p-4 text-left w-72 text-red-400">NEA</th>
-                        <th className="p-4 text-left w-72 text-amber-400">APO</th>
-                        <th className="p-4 text-left w-72 text-blue-400">PAR</th>
-                        <th className="p-4 text-left w-72 text-emerald-400">AUT</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-slate-700 text-xs">
-                      {estudantesDaTurma.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="p-8 text-center text-slate-400 font-bold text-sm">
-                            Nenhum aluno cadastrado para a {TURMAS.find(t => t.id === turmaAtiva)?.nome}.
-                          </td>
-                        </tr>
-                      ) : (
-                        estudantesDaTurma.map((aluno) => (
-                          <React.Fragment key={aluno.id}>
-                            <tr className="bg-blue-50/40">
-                              <td colSpan={5} className="p-3 font-black text-sm text-blue-900 border-y border-blue-100">
-                                ALUNO: <span className="underline">{aluno.nome}</span>
-                              </td>
-                            </tr>
-                            {rubricaAtual.criterios.map((crit) => {
-                              const notaSelecionada = getNotaAtual(aluno.id, crit.id);
-                              return (
-                                <tr key={crit.id} className="hover:bg-slate-50/40 transition-colors">
-                                  <td className="p-4 font-bold text-slate-900 bg-slate-50/30 align-top">
-                                    {crit.referencia}
-                                  </td>
-                                  {(['NEA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
-                                    const cores = {
-                                      NEA: 'bg-red-50 text-red-900 border-red-500',
-                                      APO: 'bg-amber-50 text-amber-900 border-amber-500',
-                                      PAR: 'bg-blue-50 text-blue-900 border-blue-500',
-                                      AUT: 'bg-emerald-50 text-emerald-900 border-emerald-500',
-                                    };
-                                    return (
-                                      <td
-                                        key={nivel}
-                                        onClick={() => handleSelectNivel(aluno.id, crit.id, nivel)}
-                                        className={`p-4 align-top cursor-pointer border-l border-slate-100 transition-all ${
-                                          notaSelecionada === nivel ? `${cores[nivel]} border-2 font-bold shadow-inner` : 'hover:bg-slate-200/50 text-slate-600'
-                                        }`}
-                                      >
-                                        {crit[nivel.toLowerCase() as keyof Omit<typeof crit, 'id' | 'referencia'>]}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              );
-                            })}
-                          </React.Fragment>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </main>
