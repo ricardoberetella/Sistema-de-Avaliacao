@@ -10,7 +10,6 @@ interface CapacidadeCardProps {
 }
 
 export default function CapacidadeCard({ capacidade, alunosAvaliados, alunosAutonomos, totalAlunos, onClick }: CapacidadeCardProps) {
-  // O progresso mostra quantos alunos já atingiram autonomia ou proficiência aceitável (PAR/AUT)
   const porcentagem = totalAlunos > 0 ? (alunosAvaliados / totalAlunos) * 100 : 0;
 
   return (
