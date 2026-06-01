@@ -13,7 +13,6 @@ export interface Aluno {
   id: string;
   nome: string;
   turmaId: TurmaId;
-  // Mapeia o ID da capacidade para o nível alcançado
   avaliacoes: {
     [capacidadeId: string]: NivelDesempenho;
   };
