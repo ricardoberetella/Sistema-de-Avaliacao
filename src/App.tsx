@@ -26,11 +26,12 @@ import {
   ArrowLeft,
   Clock
 } from "lucide-react";
-import { CurricularUnit, SubjectStatus, GradingMethod, Student, SubjectTemplate, Turma } from "./types";
-import { getInitialSENAIData, getInitialSENAITurmas, determineUnitStatus, calculateAttendancePercentage, calculateUnitGrade, getStatusText } from "./utils";
+import { CurricularUnit, SubjectStatus, GradingMethod, Student, SubjectTemplate, Turma, PerformanceLevel } from "./types";
+import { getInitialSENAIData, getInitialSENAITurmas, determineUnitStatus, calculateAttendancePercentage, calculateUnitGrade, getStatusText, getDefaultCapacitiesForUC } from "./utils";
 import StatsDashboard from "./components/StatsDashboard";
 import SubjectCard from "./components/SubjectCard";
 import SubjectDetailModal from "./components/SubjectDetailModal";
+import DemonstracoesPanel from "./components/DemonstracoesPanel";
 
 const LOCAL_STORAGE_KEY = "boletim_senai_data_v2";
 
@@ -39,6 +40,7 @@ export default function App() {
   const [selectedTurmaId, setSelectedTurmaId] = useState<string>("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [isManagingRegistry, setIsManagingRegistry] = useState<boolean>(false);
+  const [activeView, setActiveView] = useState<"boletim" | "demonstracoes">("demonstracoes");
 
   const [selectedUnit, setSelectedUnit] = useState<CurricularUnit | null>(null);
   
@@ -179,6 +181,150 @@ export default function App() {
       return t;
     });
     saveAllTurmas(nextTurmas);
+  };
+
+  const handleSaveStudentCapacity = (
+    turmaId: string,
+    studentId: string,
+    ucCode: string,
+    capacityCode: string,
+    rubric: PerformanceLevel | null,
+    grade: number | null,
+    notes: string
+  ) => {
+    const nextTurmas = turmas.map(t => {
+      if (t.id === turmaId) {
+        return {
+          ...t,
+          students: t.students.map(s => {
+            if (s.id === studentId) {
+              return {
+                ...s,
+                units: s.units.map(u => {
+                  if (u.code === ucCode) {
+                    const caps = u.capacidadesTecnicas || [];
+                    const capExists = caps.some(c => c.code === capacityCode);
+                    
+                    const updatedCaps = capExists
+                      ? caps.map(c => c.code === capacityCode ? { ...c, rubric, grade, notes } : c)
+                      : [
+                          ...caps,
+                          {
+                            capacityId: `${ucCode.toLowerCase()}-${capacityCode.toLowerCase().replace(/\s+/g, '')}`,
+                            code: capacityCode,
+                            title: capacityCode,
+                            rubric,
+                            grade,
+                            notes
+                          }
+                        ];
+
+                    return {
+                      ...u,
+                      capacidadesTecnicas: updatedCaps
+                    };
+                  }
+                  return u;
+                })
+              };
+            }
+            return s;
+          })
+        };
+      }
+      return t;
+    });
+
+    saveAllTurmas(nextTurmas);
+  };
+
+  const handleQuickAddStudentToTurma = (turmaId: string, studentName: string, studentRA: string) => {
+    const targetTurma = turmas.find(t => t.id === turmaId);
+    if (!targetTurma) return;
+
+    const instantiatedUnits = targetTurma.subjects.map(sub => {
+      const code = sub.code || "";
+      const caps = getDefaultCapacitiesForUC(code).map(c => ({
+        capacityId: `${code.toLowerCase()}-${c.code.toLowerCase().replace(/\s+/g, '')}`,
+        code: c.code,
+        title: c.title,
+        rubric: null,
+        grade: null,
+        notes: ""
+      }));
+
+      return {
+        id: "uc-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
+        name: sub.name,
+        code: sub.code,
+        teacher: sub.teacher,
+        workload: sub.workload,
+        absenceHours: 0,
+        passingGrade: sub.passingGrade,
+        maxGradeScale: sub.maxGradeScale,
+        gradingMethod: sub.gradingMethod,
+        evaluations: [
+          {
+            id: "eval-" + Date.now(),
+            title: "SA1 - Atividade Diagnóstica",
+            weight: sub.gradingMethod === GradingMethod.POINTS ? sub.maxGradeScale : 100,
+            maxGrade: sub.maxGradeScale,
+            gradeReceived: null,
+            status: "PENDING" as any
+          }
+        ],
+        hasRecovery: false,
+        recoveryGrade: null,
+        notes: "Estudante inserido.",
+        capacidadesTecnicas: caps
+      };
+    });
+
+    const newStd: Student = {
+      id: "std-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
+      name: studentName,
+      ra: studentRA,
+      email: `${studentName.toLowerCase().replace(/\s+/g, ".")}@aluno.senai.br`,
+      units: instantiatedUnits
+    };
+
+    const nextTurmas = turmas.map(t => {
+      if (t.id === turmaId) {
+        return {
+          ...t,
+          students: [...t.students, newStd]
+        };
+      }
+      return t;
+    });
+
+    saveAllTurmas(nextTurmas);
+    if (selectedTurmaId === turmaId) {
+      setSelectedStudentId(newStd.id);
+    }
+  };
+
+  const handleQuickRemoveStudentFromTurma = (turmaId: string, studentId: string) => {
+    const nextTurmas = turmas.map(t => {
+      if (t.id === turmaId) {
+        return {
+          ...t,
+          students: t.students.filter(s => s.id !== studentId)
+        };
+      }
+      return t;
+    });
+
+    saveAllTurmas(nextTurmas);
+
+    if (selectedStudentId === studentId) {
+      const targetT = nextTurmas.find(t => t.id === selectedTurmaId);
+      if (targetT && targetT.students && targetT.students.length > 0) {
+        setSelectedStudentId(targetT.students[0].id);
+      } else {
+        setSelectedStudentId("");
+      }
+    }
   };
 
   const activeTurma = turmas.find(t => t.id === selectedTurmaId) || turmas[0];
@@ -581,74 +727,99 @@ export default function App() {
           </button>
         </div>
 
-        {/* Links de status mapeados nos botões do Sidebar */}
         <nav className="flex-1 px-4 space-y-1 mt-4">
-          <p className="text-[10px] text-white/50 uppercase tracking-wider font-semibold px-4 pt-4 pb-2 font-mono">Boletim Escolar</p>
+          <p className="text-[10px] text-white/50 uppercase tracking-wider font-semibold px-4 pb-2 font-mono">Modo de Exibição</p>
           <button
-            onClick={() => { setStatusFilter("ALL"); setIsManagingRegistry(false); }}
+            onClick={() => { setActiveView("demonstracoes"); setIsManagingRegistry(false); }}
             type="button"
-            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-              !isManagingRegistry && statusFilter === "ALL" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors cursor-pointer ${
+              activeView === "demonstracoes" ? "bg-white text-[#005DA5] font-extrabold shadow-sm" : "hover:bg-white/5 text-white/80 font-medium"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ALL" ? "bg-white" : "bg-white/40"}`}></div>
-              <span>Todas as Notas</span>
-            </div>
-            <span className="text-xs bg-white/15 px-2 py-0.5 rounded font-mono text-white/90">{units.length}</span>
+            <span className="text-sm">🛠️</span>
+            <span className="text-xs uppercase tracking-tight font-mono">Demonstrações</span>
+          </button>
+          <button
+            onClick={() => { setActiveView("boletim"); setIsManagingRegistry(false); }}
+            type="button"
+            className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors cursor-pointer ${
+              activeView === "boletim" ? "bg-white text-[#005DA5] font-extrabold shadow-sm" : "hover:bg-white/5 text-white/80 font-medium"
+            }`}
+          >
+            <span className="text-sm">📋</span>
+            <span className="text-xs uppercase tracking-tight font-mono">Boletim Escolar</span>
           </button>
 
-          <button
-            onClick={() => { setStatusFilter("ONGOING"); setIsManagingRegistry(false); }}
-            type="button"
-            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-              !isManagingRegistry && statusFilter === "ONGOING" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ONGOING" ? "bg-sky-400" : "bg-white/40"}`}></div>
-              <span>Cursando</span>
-            </div>
-          </button>
+          {activeView === "boletim" && (
+            <div className="mt-6 pt-4 border-t border-white/10 space-y-1">
+              <p className="text-[10px] text-white/50 uppercase tracking-wider font-semibold px-4 pb-2 font-mono">Filtros Boletim</p>
+              <button
+                onClick={() => { setStatusFilter("ALL"); setIsManagingRegistry(false); }}
+                type="button"
+                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                  !isManagingRegistry && statusFilter === "ALL" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ALL" ? "bg-white" : "bg-white/40"}`}></div>
+                  <span>Todas as Notas</span>
+                </div>
+                <span className="text-xs bg-white/15 px-2 py-0.5 rounded font-mono text-white/90">{units.length}</span>
+              </button>
 
-          <button
-            onClick={() => { setStatusFilter("PASSED"); setIsManagingRegistry(false); }}
-            type="button"
-            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-              !isManagingRegistry && statusFilter === "PASSED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "PASSED" ? "bg-emerald-400" : "bg-white/40"}`}></div>
-              <span>Aprovados</span>
-            </div>
-          </button>
+              <button
+                onClick={() => { setStatusFilter("ONGOING"); setIsManagingRegistry(false); }}
+                type="button"
+                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                  !isManagingRegistry && statusFilter === "ONGOING" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "ONGOING" ? "bg-sky-400" : "bg-white/40"}`}></div>
+                  <span>Cursando</span>
+                </div>
+              </button>
 
-          <button
-            onClick={() => { setStatusFilter("RECOVERY"); setIsManagingRegistry(false); }}
-            type="button"
-            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-              !isManagingRegistry && statusFilter === "RECOVERY" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "RECOVERY" ? "bg-amber-400" : "bg-white/40"}`}></div>
-              <span>Em Recuperação</span>
-            </div>
-          </button>
+              <button
+                onClick={() => { setStatusFilter("PASSED"); setIsManagingRegistry(false); }}
+                type="button"
+                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                  !isManagingRegistry && statusFilter === "PASSED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "PASSED" ? "bg-emerald-400" : "bg-white/40"}`}></div>
+                  <span>Aprovados</span>
+                </div>
+              </button>
 
-          <button
-            onClick={() => { setStatusFilter("FAILED"); setIsManagingRegistry(false); }}
-            type="button"
-            className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
-              !isManagingRegistry && statusFilter === "FAILED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "FAILED" ? "bg-red-400" : "bg-white/40"}`}></div>
-              <span>Retidos</span>
+              <button
+                onClick={() => { setStatusFilter("RECOVERY"); setIsManagingRegistry(false); }}
+                type="button"
+                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                  !isManagingRegistry && statusFilter === "RECOVERY" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "RECOVERY" ? "bg-amber-400" : "bg-white/40"}`}></div>
+                  <span>Em Recuperação</span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setStatusFilter("FAILED"); setIsManagingRegistry(false); }}
+                type="button"
+                className={`w-full text-left p-3.5 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${
+                  !isManagingRegistry && statusFilter === "FAILED" ? "bg-white/10 text-white font-semibold" : "hover:bg-white/5 text-white/80"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${!isManagingRegistry && statusFilter === "FAILED" ? "bg-red-400" : "bg-white/40"}`}></div>
+                  <span>Retidos</span>
+                </div>
+              </button>
             </div>
-          </button>
+          )}
         </nav>
 
         <div className="p-6 bg-black/15 text-xs text-white/50 text-center uppercase tracking-widest font-mono shrink-0">
@@ -659,7 +830,22 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0">
         
-        {isManagingRegistry ? (
+        {activeView === "demonstracoes" ? (
+          <DemonstracoesPanel
+            turmas={turmas}
+            selectedTurmaId={selectedTurmaId}
+            onSelectTurma={(id) => {
+              setSelectedTurmaId(id);
+              const t = turmas.find(x => x.id === id);
+              if (t && t.students && t.students.length > 0) {
+                setSelectedStudentId(t.students[0].id);
+              }
+            }}
+            onSaveStudentCapacity={handleSaveStudentCapacity}
+            onAddStudentToTurma={handleQuickAddStudentToTurma}
+            onRemoveStudentFromTurma={handleQuickRemoveStudentFromTurma}
+          />
+        ) : isManagingRegistry ? (
           
           /* =========================================================================
              A. PAINEL INSTITUCIONAL DE CADASTRO (TURMAS, ALUNOS & MATRIZ CURRICULAR)

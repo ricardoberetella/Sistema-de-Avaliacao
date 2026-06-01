@@ -37,6 +37,15 @@ export interface Evaluation {
   rubricsSelections?: RubricSelection;
 }
 
+export interface TechnicalCapacityRating {
+  capacityId: string;
+  code: string; // Ex: OP. 01, OP. 02, etc.
+  title: string;
+  rubric: PerformanceLevel | null; // "NSA" | "APO" | "PAR" | "AUT"
+  grade: number | null; // Nota numérica (0 a 10 ou 0 a 100)
+  notes?: string; // Observação / Comentários
+}
+
 export enum SubjectStatus {
   ONGOING = "ONGOING", // Em Andamento
   PASSED = "PASSED", // Aprovado
@@ -59,6 +68,7 @@ export interface CurricularUnit {
   hasRecovery: boolean; // Indica se usou o recurso de recuperação
   recoveryGrade: number | null; // Nota obtida na prova de recuperação
   notes?: string; // Notas de estudo ou anotações
+  capacidadesTecnicas?: TechnicalCapacityRating[];
 }
 
 export interface SubjectTemplate {
