@@ -5,7 +5,7 @@ import CapacidadeCard from './components/CapacidadeCard';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
-  const [ucAtiva, setUcAtiva] = useState<UCId>('CRD'); // Inicializa em CRD para visualização imediata
+  const [ucAtiva, setUcAtiva] = useState<UCId>('LIDT'); // Inicializa em LIDT para validação
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [novoNome, setNovoNome] = useState('');
   const [capSelecionada, setCapSelecionada] = useState<CapacidadeTecnica | null>(null);
@@ -55,7 +55,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      {/* CABEÇALHO PADRÃO DO SISTEMA (image_e0fda8.png) */}
+      {/* CABEÇALHO COMPACTO COM SELETOR DE TRÊS UNIDADES CURRICULARES */}
       <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic">
@@ -66,26 +66,32 @@ export default function App() {
               Mecânico de Usinagem Convencional
             </h1>
             
-            {/* SELEÇÃO ENTRE UNIDADES CURRICULARES */}
-            <div className="flex gap-4 mt-2 justify-center sm:justify-start">
+            {/* LINKS DE ALTERNÂNCIA DE UNIDADES CURRICULARES */}
+            <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 justify-center sm:justify-start">
               <button 
                 onClick={() => { setUcAtiva('FUSI'); setCapSelecionada(null); }}
-                className={`text-xs font-black uppercase tracking-wider transition-colors ${ucAtiva === 'FUSI' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'FUSI' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
               >
-                Fundamentos da Usinagem (FUSI)
+                FUSI (Usinagem)
               </button>
               <button 
                 onClick={() => { setUcAtiva('CRD'); setCapSelecionada(null); }}
-                className={`text-xs font-black uppercase tracking-wider transition-colors ${ucAtiva === 'CRD' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'CRD' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
               >
-                Controle Dimensional (CRD)
+                CRD (Metrologia)
+              </button>
+              <button 
+                onClick={() => { setUcAtiva('LIDT'); setCapSelecionada(null); }}
+                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'LIDT' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+              >
+                LIDT (Desenho Técnico)
               </button>
             </div>
           </div>
         </div>
 
-        {/* Seletor de Turmas */}
-        <div className="bg-[#003670] p-1 rounded-xl flex items-center shadow-inner">
+        {/* Seletor de Turma */}
+        <div className="bg-[#003670] p-1 rounded-xl flex items-center shadow-inner shrink-0">
           {turmasDisponiveis.map((t) => (
             <button
               key={t}
@@ -100,7 +106,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTEÚDO DE CARDS */}
+      {/* CONTEÚDO PRINCIPAL */}
       <main className="p-8 max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-3">
@@ -108,11 +114,11 @@ export default function App() {
               TURMA {turmaAtiva}
             </h2>
             <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
-              MATRIZ {ucAtiva}
+              {ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : 'Leitura de Desenho Técnico'}
             </span>
           </div>
 
-          {/* Adicionar Alunos */}
+          {/* Form Arredondado com Borda Vermelha e Botão ADD alinhado */}
           <form onSubmit={handleAddAluno} className="flex items-center gap-3 w-full sm:w-auto">
             <input
               type="text"
@@ -130,7 +136,7 @@ export default function App() {
           </form>
         </div>
 
-        {/* LAYOUT EM GRID DOS CARDS DE CAPACIDADE DE CONTROLE DIMENSIONAL */}
+        {/* GRADE DE CARDS EM 4 COLUNAS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {capacidadesFiltradas.map((cap) => (
             <CapacidadeCard
@@ -144,14 +150,14 @@ export default function App() {
           ))}
         </div>
 
-        {/* MODAL PARA SELEÇÃO DOS NÍVEIS DA RUBRICA RELATIVA POR ESTUDANTE */}
+        {/* MODAL INTEGRADO PARA SELEÇÃO DAS RUBRICAS RELATIVAS (NEA, APO, PAR, AUT) */}
         {capSelecionada && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-4xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
               
               <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
                 <div className="pr-4">
-                  <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{capSelecionada.codigo} - DESEMPENHO EM CONTROLE DIMENSIONAL</span>
+                  <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{capSelecionada.codigo} - MATRIZ DE AVALIAÇÃO</span>
                   <h3 className="text-sm font-bold uppercase mt-1 leading-relaxed text-slate-100">{capSelecionada.descricao}</h3>
                 </div>
                 <button 
@@ -177,7 +183,6 @@ export default function App() {
                           <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
                         </div>
 
-                        {/* Botões Multisseleção da Rubrica Relativa (NEA, APO, PAR, AUT) */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
                           {(['NEA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
                             const configCores = {
@@ -225,7 +230,7 @@ export default function App() {
                   onClick={() => setCapSelecionada(null)}
                   className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
                 >
-                  Confirmar Notas
+                  Salvar Avaliações
                 </button>
               </div>
 
