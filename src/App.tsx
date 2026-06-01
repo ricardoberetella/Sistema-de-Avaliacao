@@ -756,7 +756,7 @@ export default function App() {
 
         {/* Right selectable Turma pills capsule and logout button */}
         <div className="flex items-center gap-4 w-full md:w-auto justify-center md:justify-end shrink-0">
-          <div className="bg-[#004780] p-1.5 rounded-full flex items-center gap-1.5 shadow-inner">
+          <div className="bg-[#003B6B] p-1.5 rounded-2xl flex items-center gap-2.5 shadow-inner border border-[#002f56]">
             {turmas.map(t => {
               const isSelected = selectedTurmaId === t.id;
               return (
@@ -764,10 +764,10 @@ export default function App() {
                   key={t.id}
                   onClick={() => handleSelectTurma(t.id)}
                   type="button"
-                  className={`px-4.5 py-1.5 text-xs font-black uppercase rounded-full transition-all duration-150 cursor-pointer ${
+                  className={`px-5 py-2.5 text-xs font-black uppercase transition-all duration-150 cursor-pointer ${
                     isSelected 
-                      ? "bg-white text-[#005DA5] shadow-md font-extrabold" 
-                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                      ? "bg-white text-[#005DA5] shadow-md font-black rounded-xl" 
+                      : "text-[#589BD1] hover:text-white font-black"
                   }`}
                 >
                   {t.code}
