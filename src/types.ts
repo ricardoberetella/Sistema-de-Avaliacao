@@ -13,30 +13,37 @@ export interface UnidadeCurricular {
   nome: string;
 }
 
-export interface Criterio {
+export type NivelDesempenho = 'NEA' | 'APO' | 'PAR' | 'AUT';
+
+export interface LinhaCriterio {
   id: string;
-  descricao: string;
-  tipo: 'tecnica' | 'socioemocional' | 'organizativa' | 'metodologica';
+  referencia: string;
+  nea: string;
+  apo: string;
+  par: string;
+  aut: string;
 }
 
-export interface Rubrica {
+export interface RubricaFicha {
   id: string;
   ucId: UCId;
   titulo: string;
-  criterios: Criterio[];
+  criterios: LinhaCriterio[];
 }
 
 export interface Estudante {
-  id: number;
+  id: string;
   nome: string;
   turmaId: TurmaId;
 }
 
 export interface AvaliacaoEstudante {
-  estudanteId: number;
+  estudanteId: string;
   turmaId: TurmaId;
   ucId: UCId;
+  rubricaId: string;
+  // Mapeia o id do critério para o nível selecionado (NEA, APO, etc.)
   notas: {
-    [criterioId: string]: 'C' | 'NC' | null; // C = Conseguiu, NC = Não Conseguiu
+    [criterioId: string]: NivelDesempenho | null;
   };
 }
