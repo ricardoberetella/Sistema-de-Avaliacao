@@ -19,9 +19,9 @@ export default function SubjectCard({ uc, onClick }: SubjectCardProps) {
         <h3 className="text-lg font-bold text-slate-800 mt-3">{uc.nome}</h3>
       </div>
       <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
-        <span>Estrutura SENAI (SMO)</span>
-        <span className="text-blue-600 font-semibold group-hover:translate-x-1 transition-transform">
-          Acessar Rubricas &rarr;
+        <span>Matriz SENAI por Níveis</span>
+        <span className="text-blue-600 font-semibold">
+          Abrir Avaliação &rarr;
         </span>
       </div>
     </div>
