@@ -31,6 +31,13 @@ export interface RubricaFicha {
   criterios: LinhaCriterio[];
 }
 
+export interface AulaCronograma {
+  aula: number;
+  data: string;
+  conteudo: string;
+  estrategia: string;
+}
+
 export interface Estudante {
   id: string;
   nome: string;
