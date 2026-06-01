@@ -51,6 +51,7 @@ export default function SubjectDetailModal({ unit, onClose, onSave }: SubjectDet
   const [newEvalTitle, setNewEvalTitle] = useState("");
   const [newEvalWeight, setNewEvalWeight] = useState(10);
   const [newEvalMaxGrade, setNewEvalMaxGrade] = useState(100);
+  const [newEvalUseRubrics, setNewEvalUseRubrics] = useState(true);
 
   // Cálculos dinâmicos em tempo de digitação
   const tempUnitObj: CurricularUnit = {
@@ -120,12 +121,15 @@ export default function SubjectDetailModal({ unit, onClose, onSave }: SubjectDet
       weight: Number(newEvalWeight),
       maxGrade: Number(newEvalMaxGrade),
       gradeReceived: null,
-      status: EvaluationStatus.PENDING
+      status: EvaluationStatus.PENDING,
+      useRubrics: newEvalUseRubrics,
+      rubricsSelections: newEvalUseRubrics ? {} : undefined
     };
 
     setEvaluations(prev => [...prev, newEval]);
     setNewEvalTitle("");
     setShowAddEvalForm(false);
+    setNewEvalUseRubrics(true);
   };
 
   // Salvar tudo de volta ao aplicativo
@@ -510,6 +514,33 @@ export default function SubjectDetailModal({ unit, onClose, onSave }: SubjectDet
                     />
                   </div>
                 </div>
+
+                {/* Campo de escolha para avaliar por rubricas */}
+                <div className="bg-[#005DA5]/5 p-3.5 border border-[#005DA5]/10 space-y-2">
+                  <span className="block text-[10px] font-mono font-bold text-[#005DA5] uppercase tracking-wider">Método de Avaliação do SENAI</span>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900 select-none">
+                      <input 
+                        type="radio"
+                        name="gradingChoice"
+                        checked={newEvalUseRubrics}
+                        onChange={() => setNewEvalUseRubrics(true)}
+                        className="h-4.5 w-4.5 text-[#005DA5] border-slate-300 focus:ring-[#005DA5]"
+                      />
+                      <span>Avaliar com Rubricas Descritivas (NSA, APO, PAR, AUT)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900 select-none">
+                      <input 
+                        type="radio"
+                        name="gradingChoice"
+                        checked={!newEvalUseRubrics}
+                        onChange={() => setNewEvalUseRubrics(false)}
+                        className="h-4.5 w-4.5 text-[#005DA5] border-slate-300 focus:ring-[#005DA5]"
+                      />
+                      <span>Lançar Nota Numérica Direta (Sem critérios qualitativos)</span>
+                    </label>
+                  </div>
+                </div>
                 <div className="flex justify-end gap-1.5 pt-1">
                   <button
                     type="button"
@@ -591,34 +622,56 @@ export default function SubjectDetailModal({ unit, onClose, onSave }: SubjectDet
 
                         <div className="flex flex-wrap items-center gap-2.5 self-end md:self-auto">
                           
-                          {/* Botão de abrir/fechar Rubricas */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveRubricEvalId(isRubricsActive ? null : evalItem.id);
-                              if (!evalItem.useRubrics) {
-                                setEvaluations(prev => prev.map(e => {
-                                  if (e.id === evalItem.id) {
-                                    return { ...e, useRubrics: true };
+                          {/* Campo de escolha: Rubricas vs Nota Direta */}
+                          <div className="flex items-center bg-white border border-[#E1E4E8] rounded-none px-2 py-1 select-none">
+                            <span className="text-[9px] font-mono font-bold text-[#6C757D] mr-1">MÉTODO:</span>
+                            <select
+                              value={evalItem.useRubrics ? "rubrics" : "direct"}
+                              onChange={(e) => {
+                                const useRub = e.target.value === "rubrics";
+                                setEvaluations(prev => prev.map(ev => {
+                                  if (ev.id === evalItem.id) {
+                                    return { 
+                                      ...ev, 
+                                      useRubrics: useRub,
+                                      rubricsSelections: useRub ? (ev.rubricsSelections || {}) : undefined
+                                    };
                                   }
-                                  return e;
+                                  return ev;
                                 }));
-                              }
-                            }}
-                            className={`px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer border rounded-none transition-colors ${
-                              selectedCount > 0
-                                ? "bg-indigo-50 border-indigo-200 text-indigo-750 hover:bg-indigo-100"
-                                : "bg-white border-[#E1E4E8] hover:bg-[#F8F9FA] text-[#6C757D]"
-                            }`}
-                            title="Modificar descritores específicos (NSA, APO, PAR, AUT) do SENAI"
-                          >
-                            <span>Preencher Rubricas</span>
-                            {selectedCount > 0 && (
-                              <span className="bg-[#005DA5] text-white rounded-full h-4 w-4 flex items-center justify-center text-[9px] font-mono font-bold">
-                                {selectedCount}
-                              </span>
-                            )}
-                          </button>
+                                if (!useRub && isRubricsActive) {
+                                  setActiveRubricEvalId(null);
+                                }
+                              }}
+                              className="bg-transparent border-0 text-[10px] font-mono font-bold text-[#005DA5] cursor-pointer outline-none focus:ring-0 p-0"
+                            >
+                              <option value="rubrics">Por Rubrica</option>
+                              <option value="direct">Nota Direta</option>
+                            </select>
+                          </div>
+
+                          {/* Botão de abrir/fechar Rubricas */}
+                          {evalItem.useRubrics && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveRubricEvalId(isRubricsActive ? null : evalItem.id);
+                              }}
+                              className={`px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer border rounded-none transition-colors ${
+                                selectedCount > 0
+                                  ? "bg-indigo-50 border-indigo-200 text-indigo-750 hover:bg-indigo-100"
+                                  : "bg-white border-[#E1E4E8] hover:bg-[#F8F9FA] text-[#6C757D]"
+                              }`}
+                              title="Modificar descritores específicos (NSA, APO, PAR, AUT) do SENAI"
+                            >
+                              <span>Preencher Rubricas</span>
+                              {selectedCount > 0 && (
+                                <span className="bg-[#005DA5] text-white rounded-full h-4 w-4 flex items-center justify-center text-[9px] font-mono font-bold">
+                                  {selectedCount}
+                                </span>
+                              )}
+                            </button>
+                          )}
 
                           {/* Campo de Nota do Aluno (onde o professor define a nota final) */}
                           <div className="flex items-center gap-1 bg-white p-1 rounded-none border border-[#E1E4E8]">
