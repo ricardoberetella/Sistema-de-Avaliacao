@@ -24,7 +24,8 @@ import {
   Trash2,
   Settings,
   ArrowLeft,
-  Clock
+  Clock,
+  LogOut
 } from "lucide-react";
 import { CurricularUnit, SubjectStatus, GradingMethod, Student, SubjectTemplate, Turma, PerformanceLevel } from "./types";
 import { getInitialSENAIData, getInitialSENAITurmas, determineUnitStatus, calculateAttendancePercentage, calculateUnitGrade, getStatusText, getDefaultCapacitiesForUC } from "./utils";
@@ -72,6 +73,47 @@ export default function App() {
   const [newStudentName, setNewStudentName] = useState("");
   const [newStudentRA, setNewStudentRA] = useState("");
   const [newStudentEmail, setNewStudentEmail] = useState("");
+
+  // Estado para adicionar aluno rapidamente a partir do cabeçalho
+  const [newStudentNameForQuickAdd, setNewStudentNameForQuickAdd] = useState("");
+
+  const handleQuickAddStudentAtTop = () => {
+    if (!newStudentNameForQuickAdd.trim()) return;
+    if (!selectedTurmaId) return;
+
+    const targetTurma = turmas.find(t => t.id === selectedTurmaId);
+    if (!targetTurma) return;
+
+    const nextIndex = (targetTurma.students?.length || 0) + 1;
+    const paddedIndex = nextIndex < 10 ? `0${nextIndex}` : `${nextIndex}`;
+    const generatedRA = `2026-USI-${paddedIndex}`;
+
+    handleQuickAddStudentToTurma(selectedTurmaId, newStudentNameForQuickAdd.trim(), generatedRA);
+    setNewStudentNameForQuickAdd("");
+
+    // Automatically set the newly created student as the active student
+    // Let's deduce is student active
+    setTimeout(() => {
+      const updatedTurmasSaved = localStorage.getItem("boletim_senai_turmas_v3");
+      if (updatedTurmasSaved) {
+        try {
+          const parsed = JSON.parse(updatedTurmasSaved);
+          const tMatch = parsed.find((x: any) => x.id === selectedTurmaId);
+          if (tMatch && tMatch.students && tMatch.students.length > 0) {
+            // Find the student with matching RA or matching name recently added
+            const addedStudent = tMatch.students.find((s: any) => s.name === newStudentNameForQuickAdd.trim() || s.ra === generatedRA);
+            if (addedStudent) {
+              setSelectedStudentId(addedStudent.id);
+            } else {
+              setSelectedStudentId(tMatch.students[tMatch.students.length - 1].id);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }, 50);
+  };
 
   // Formulário de Nova Matéria (SubjectTemplate) na Turma
   const [newSubName, setNewSubName] = useState("");
@@ -686,10 +728,108 @@ export default function App() {
     : 0;
 
   return (
-    <div id="boletim-app-wrapper" className="min-h-screen bg-[#F8F9FA] flex flex-col md:flex-row font-sans text-[#1A1C1E] antialiased">
+    <div id="boletim-app-wrapper" className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans text-[#1A1C1E] antialiased">
       
-      {/* Sidebar Corporativo - Sleek Theme */}
-      <aside className="w-full md:w-64 bg-[#005DA5] flex flex-col text-white shrink-0 shadow-md">
+      {/* 1. TOP HEADER BRANDEADO SENAI - COMPATÍVEL COM A IMAGEM FORNECIDA */}
+      <header className="w-full bg-[#005DA5] text-white flex flex-col md:flex-row items-center justify-between px-6 py-4 md:py-3 shadow-md gap-4 shrink-0 border-b-4 border-[#004A85] select-none">
+        
+        {/* Left red slanted parallelogram container with SENAI */}
+        <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-between md:justify-start">
+          <div 
+            onClick={() => { setSearchTerm(""); setStatusFilter("ALL"); setIsManagingRegistry(false); }}
+            className="bg-[#E52E2E] px-8 py-3.5 transform -skew-x-12 select-none font-black text-3xl tracking-tighter italic text-white flex items-center justify-center cursor-pointer hover:bg-[#c22020] transition-colors shadow-lg"
+            style={{ minWidth: "140px" }}
+          >
+            SENAI
+          </div>
+        </div>
+
+        {/* Center Text displaying course name and rubrics system */}
+        <div className="text-center flex flex-col flex-1">
+          <h1 className="text-xl md:text-2xl font-black tracking-wider text-white uppercase font-sans drop-shadow-xs">
+            MECÂNICO DE USINAGEM CONVENCIONAL
+          </h1>
+          <span className="text-xs md:text-sm text-[#A2C7E5] font-bold uppercase tracking-[0.2em] font-mono mt-0.5">
+            SISTEMA DE AVALIAÇÃO - RUBRICAS
+          </span>
+        </div>
+
+        {/* Right selectable Turma pills capsule and logout button */}
+        <div className="flex items-center gap-4 w-full md:w-auto justify-center md:justify-end shrink-0">
+          <div className="bg-[#004780] p-1.5 rounded-full flex items-center gap-1.5 shadow-inner">
+            {turmas.map(t => {
+              const isSelected = selectedTurmaId === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => handleSelectTurma(t.id)}
+                  type="button"
+                  className={`px-4.5 py-1.5 text-xs font-black uppercase rounded-full transition-all duration-150 cursor-pointer ${
+                    isSelected 
+                      ? "bg-white text-[#005DA5] shadow-md font-extrabold" 
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {t.code}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={handleResetDefaults}
+            title="Redefinir Dados para o Padrão do Curso"
+            className="bg-[#E52E2E] text-white p-2.5 hover:bg-[#c22020] transition-all rounded-lg flex items-center justify-center cursor-pointer shadow-md shrink-0"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
+      </header>
+
+      {/* 2. SUB-HEADER BAR WITH ACTIVE CLASS LABEL & QUICK STUDENT ADD (EXACT REPLICA OF THE DRAWING IN IMAGE) */}
+      <div className="bg-[#F1F3F5] border-b border-[#E1E4E8] px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-xs">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-black text-[#005DA5] uppercase tracking-wide flex items-center gap-2 italic">
+            TURMA {activeTurma ? activeTurma.code : "MA"}
+          </h2>
+          <button 
+            type="button"
+            onClick={() => setIsManagingRegistry(!isManagingRegistry)}
+            className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded shadow-2xs border border-slate-300 transition-all cursor-pointer"
+          >
+            {isManagingRegistry ? "📋 Boletim" : "⚙️ Painel"}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <input 
+            type="text"
+            placeholder="NOME DO ALUNO..."
+            value={newStudentNameForQuickAdd}
+            onChange={(e) => setNewStudentNameForQuickAdd(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleQuickAddStudentAtTop();
+              }
+            }}
+            className="bg-white border border-[#DDE1E5] px-4 py-2 text-xs text-slate-800 rounded shadow-inner w-full sm:w-72 focus:outline-none focus:ring-1 focus:ring-[#005DA5] font-mono tracking-wide"
+          />
+          <button 
+            type="button"
+            onClick={handleQuickAddStudentAtTop}
+            className="bg-[#E52E2E] hover:bg-[#c22020] text-white text-xs font-black uppercase tracking-wider px-6 py-2.5 rounded transition-all shadow-md cursor-pointer shrink-0"
+          >
+            ADD
+          </button>
+        </div>
+      </div>
+
+      {/* Inner body wrapper to keep side-by-side design */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0">
+
+        {/* Sidebar Corporativo - Sleek Theme */}
+        <aside className="w-full md:w-64 bg-[#005DA5] flex flex-col text-white shrink-0 shadow-md">
         <div className="p-6 md:p-8 flex items-center justify-between md:block shrink-0">
           <div 
             onClick={() => { setSearchTerm(""); setStatusFilter("ALL"); setIsManagingRegistry(false); }}
@@ -1197,24 +1337,9 @@ export default function App() {
                 </p>
               </div>
 
-              {/* Controles de Seleção Integrados no Topo (Turma/Estudante) de Usinagem SENAI */}
+              {/* Controles de Seleção Integrados no Topo (Estudante Selecionado) de Usinagem SENAI */}
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                <div className="w-full sm:w-44 text-left">
-                  <span className="block text-[8px] text-[#6C757D] uppercase font-bold tracking-widest font-mono mb-1">Turma</span>
-                  <select
-                    value={selectedTurmaId}
-                    onChange={(e) => handleSelectTurma(e.target.value)}
-                    className="w-full bg-[#F8F9FA] border border-[#E1E4E8] text-xs px-2.5 py-1.5 outline-none rounded-none font-mono cursor-pointer hover:bg-[#F1F3F5] transition-all text-slate-800"
-                  >
-                    {turmas.map(t => (
-                      <option key={t.id} value={t.id} className="text-slate-800 bg-white font-sans">
-                        {t.name.replace("Mecânico de Usinagem - ", "")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="w-full sm:w-56 text-left">
+                <div className="w-full sm:w-72 text-left">
                   <span className="block text-[8px] text-[#6C757D] uppercase font-bold tracking-widest font-mono mb-1">Estudante Ativo</span>
                   <select
                     value={selectedStudentId}
@@ -1576,8 +1701,9 @@ export default function App() {
         )}
 
       </main>
+    </div>
 
-      {/* Modal de Detalhe e Edição de Nota quando selecionado */}
+    {/* Modal de Detalhe e Edição de Nota quando selecionado */}
       {selectedUnit && (
         <SubjectDetailModal 
           unit={selectedUnit} 
