@@ -1,0 +1,8 @@
+{
+  "name": "Mecânico de Usinagem - SENAI Monte Alto",
+  "description": "Controle completo de notas, avaliações, recuperação, conceitos (NSA/APO/PAR/AUT) e frequência das Unidades Curriculares de Mecânico de Usinagem no SENAI Monte Alto.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
