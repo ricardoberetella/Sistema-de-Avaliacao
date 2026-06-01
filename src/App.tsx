@@ -5,14 +5,13 @@ import CapacidadeCard from './components/CapacidadeCard';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
-  const [ucAtiva, setUcAtiva] = useState<UCId>('FUSI');
+  const [ucAtiva, setUcAtiva] = useState<UCId>('CRD'); // Inicializa em CRD para visualização imediata
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [novoNome, setNovoNome] = useState('');
   const [capSelecionada, setCapSelecionada] = useState<CapacidadeTecnica | null>(null);
 
   const turmasDisponiveis: TurmaId[] = ['MA', 'MB', 'TA', 'TB'];
   
-  // Filtra as capacidades técnicas com base na UC selecionada no cabeçalho
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
@@ -56,7 +55,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      {/* CABEÇALHO COMPACTO INSPIRADO NA IMAGEM image_e0fda8.png */}
+      {/* CABEÇALHO PADRÃO DO SISTEMA (image_e0fda8.png) */}
       <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic">
@@ -101,7 +100,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTEÚDO PRINCIPAL */}
+      {/* CONTEÚDO DE CARDS */}
       <main className="p-8 max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-3">
@@ -131,7 +130,7 @@ export default function App() {
           </form>
         </div>
 
-        {/* LISTA DINÂMICA DE CARDS */}
+        {/* LAYOUT EM GRID DOS CARDS DE CAPACIDADE DE CONTROLE DIMENSIONAL */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {capacidadesFiltradas.map((cap) => (
             <CapacidadeCard
@@ -145,14 +144,14 @@ export default function App() {
           ))}
         </div>
 
-        {/* MODAL PARA SELEÇÃO DOS NÍVEIS DA RUBRICA RELATIVA */}
+        {/* MODAL PARA SELEÇÃO DOS NÍVEIS DA RUBRICA RELATIVA POR ESTUDANTE */}
         {capSelecionada && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-4xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
               
               <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
                 <div className="pr-4">
-                  <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{capSelecionada.codigo} - AVALIAÇÃO DE DESEMPENHO ({ucAtiva})</span>
+                  <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{capSelecionada.codigo} - DESEMPENHO EM CONTROLE DIMENSIONAL</span>
                   <h3 className="text-sm font-bold uppercase mt-1 leading-relaxed text-slate-100">{capSelecionada.descricao}</h3>
                 </div>
                 <button 
@@ -178,7 +177,7 @@ export default function App() {
                           <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
                         </div>
 
-                        {/* Grade de Níveis Relativos da Rubrica */}
+                        {/* Botões Multisseleção da Rubrica Relativa (NEA, APO, PAR, AUT) */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
                           {(['NEA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
                             const configCores = {
@@ -226,7 +225,7 @@ export default function App() {
                   onClick={() => setCapSelecionada(null)}
                   className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
                 >
-                  Salvar Alterações
+                  Confirmar Notas
                 </button>
               </div>
 
