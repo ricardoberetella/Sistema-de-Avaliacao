@@ -5,7 +5,7 @@ import CapacidadeCard from './components/CapacidadeCard';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
-  const [ucAtiva, setUcAtiva] = useState<UCId>('LIDT'); // Inicializa em LIDT para validação
+  const [ucAtiva, setUcAtiva] = useState<UCId>('FUSI');
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [novoNome, setNovoNome] = useState('');
   const [capSelecionada, setCapSelecionada] = useState<CapacidadeTecnica | null>(null);
@@ -23,7 +23,8 @@ export default function App() {
       id: crypto.randomUUID(),
       nome: novoNome.trim().toUpperCase(),
       turmaId: turmaAtiva,
-      avaliacoes: {}
+      avaliacoes: {},
+      observacoes: {}
     };
 
     setAlunos(prev => [...prev, novoAluno]);
@@ -44,6 +45,19 @@ export default function App() {
     }));
   };
 
+  const handleMudarObservacao = (alunoId: string, capacidadeId: string, texto: string) => {
+    setAlunos(prev => prev.map(aluno => {
+      if (aluno.id !== alunoId) return aluno;
+      return {
+        ...aluno,
+        observacoes: {
+          ...aluno.observacoes,
+          [capacidadeId]: texto
+        }
+      };
+    }));
+  };
+
   const getAlunosAvaliadosCount = (capId: string) => {
     return alunosDaTurma.filter(a => a.avaliacoes[capId]).length;
   };
@@ -55,7 +69,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      {/* CABEÇALHO COMPACTO COM SELETOR DE TRÊS UNIDADES CURRICULARES */}
+      {/* HEADER SENAI */}
       <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic">
@@ -66,7 +80,6 @@ export default function App() {
               Mecânico de Usinagem Convencional
             </h1>
             
-            {/* LINKS DE ALTERNÂNCIA DE UNIDADES CURRICULARES */}
             <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 justify-center sm:justify-start">
               <button 
                 onClick={() => { setUcAtiva('FUSI'); setCapSelecionada(null); }}
@@ -106,7 +119,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTEÚDO PRINCIPAL */}
+      {/* CONTEÚDO */}
       <main className="p-8 max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-3">
@@ -118,7 +131,6 @@ export default function App() {
             </span>
           </div>
 
-          {/* Form Arredondado com Borda Vermelha e Botão ADD alinhado */}
           <form onSubmit={handleAddAluno} className="flex items-center gap-3 w-full sm:w-auto">
             <input
               type="text"
@@ -136,7 +148,7 @@ export default function App() {
           </form>
         </div>
 
-        {/* GRADE DE CARDS EM 4 COLUNAS */}
+        {/* CARDS DE CAPACIDADE */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {capacidadesFiltradas.map((cap) => (
             <CapacidadeCard
@@ -150,14 +162,14 @@ export default function App() {
           ))}
         </div>
 
-        {/* MODAL INTEGRADO PARA SELEÇÃO DAS RUBRICAS RELATIVAS (NEA, APO, PAR, AUT) */}
+        {/* MODAL COM CAMPO DE OBSERVAÇÃO INDIVIDUAL */}
         {capSelecionada && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white w-full max-w-4xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
+            <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
               
               <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
                 <div className="pr-4">
-                  <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{capSelecionada.codigo} - MATRIZ DE AVALIAÇÃO</span>
+                  <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{capSelecionada.codigo} - DIÁRIO DE CLASSE ({ucAtiva})</span>
                   <h3 className="text-sm font-bold uppercase mt-1 leading-relaxed text-slate-100">{capSelecionada.descricao}</h3>
                 </div>
                 <button 
@@ -176,49 +188,69 @@ export default function App() {
                 ) : (
                   alunosDaTurma.map((aluno) => {
                     const nivelAtual = aluno.avaliacoes[capSelecionada.id];
+                    const textoObs = aluno.observacoes[capSelecionada.id] || '';
                     return (
-                      <div key={aluno.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div className="lg:w-1/4">
-                          <span className="text-xs font-black text-slate-400 block tracking-wider">ESTUDANTE</span>
-                          <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
+                      <div key={aluno.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
+                        
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
+                          <div>
+                            <span className="text-[10px] font-black text-slate-400 block tracking-wider">ESTUDANTE</span>
+                            <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
+                          </div>
+
+                          {/* Seleção Rubrica: NSA (Novo), APO, PAR, AUT */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto md:w-[480px]">
+                            {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
+                              const configCores = {
+                                NSA: 'border-red-200 text-red-700 hover:bg-red-50',
+                                APO: 'border-amber-200 text-amber-700 hover:bg-amber-50',
+                                PAR: 'border-blue-200 text-blue-700 hover:bg-blue-50',
+                                AUT: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                              };
+
+                              const ativoCores = {
+                                NSA: 'bg-red-600 border-red-600 text-white shadow-md',
+                                APO: 'bg-amber-500 border-amber-500 text-white shadow-md',
+                                PAR: 'bg-blue-600 border-blue-600 text-white shadow-md',
+                                AUT: 'bg-emerald-600 border-emerald-600 text-white shadow-md'
+                              };
+
+                              const estaAtivo = nivelAtual === nivel;
+
+                              return (
+                                <button
+                                  key={nivel}
+                                  type="button"
+                                  title={getDescricaoRubrica(capSelecionada.id, nivel)}
+                                  onClick={() => handleDefinirRubrica(aluno.id, capSelecionada.id, nivel)}
+                                  className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center min-h-[50px] ${
+                                    estaAtivo ? ativoCores[nivel] : `bg-white ${configCores[nivel]}`
+                                  }`}
+                                >
+                                  <span className="text-xs font-black tracking-wider">{nivel}</span>
+                                  <span className={`text-[8px] font-bold block uppercase tracking-tight mt-0.5 ${estaAtivo ? 'text-white/90' : 'text-slate-400'}`}>
+                                    {nivel === 'NSA' ? 'Não Satisfez' : nivel === 'APO' ? 'Com Apoio' : nivel === 'PAR' ? 'Parcial' : 'Autônomo'}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
-                          {(['NEA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
-                            const configCores = {
-                              NEA: 'border-red-200 text-red-700 hover:bg-red-50',
-                              APO: 'border-amber-200 text-amber-700 hover:bg-amber-50',
-                              PAR: 'border-blue-200 text-blue-700 hover:bg-blue-50',
-                              AUT: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                            };
-
-                            const ativoCores = {
-                              NEA: 'bg-red-600 border-red-600 text-white shadow-md',
-                              APO: 'bg-amber-500 border-amber-500 text-white shadow-md',
-                              PAR: 'bg-blue-600 border-blue-600 text-white shadow-md',
-                              AUT: 'bg-emerald-600 border-emerald-600 text-white shadow-md'
-                            };
-
-                            const estaAtivo = nivelAtual === nivel;
-
-                            return (
-                              <button
-                                key={nivel}
-                                type="button"
-                                title={getDescricaoRubrica(capSelecionada.id, nivel)}
-                                onClick={() => handleDefinirRubrica(aluno.id, capSelecionada.id, nivel)}
-                                className={`p-2.5 rounded-xl border text-center transition-all duration-150 flex flex-col items-center justify-center min-h-[55px] ${
-                                  estaAtivo ? ativoCores[nivel] : `bg-white ${configCores[nivel]}`
-                                }`}
-                              >
-                                <span className="text-xs font-black tracking-wider">{nivel}</span>
-                                <span className={`text-[9px] font-medium block mt-0.5 ${estaAtivo ? 'text-white/90' : 'text-slate-400'}`}>
-                                  {nivel === 'NEA' ? 'Não Atendeu' : nivel === 'APO' ? 'Com Apoio' : nivel === 'PAR' ? 'Parcial' : 'Autônomo'}
-                                </span>
-                              </button>
-                            );
-                          })}
+                        {/* NOVO CAMPO DE OBSERVAÇÃO DOS ALUNOS */}
+                        <div className="w-full">
+                          <label className="text-[9px] font-black text-slate-400 block tracking-widest uppercase mb-1">
+                            Observações e Histórico Técnica do Aluno
+                          </label>
+                          <textarea
+                            value={textoObs}
+                            onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
+                            placeholder="Digite aqui anotações sobre tolerância, comportamento na oficina ou pontos a recuperar..."
+                            rows={2}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 resize-y"
+                          />
                         </div>
+
                       </div>
                     );
                   })
@@ -230,7 +262,7 @@ export default function App() {
                   onClick={() => setCapSelecionada(null)}
                   className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
                 >
-                  Salvar Avaliações
+                  Salvar Dados da Turma
                 </button>
               </div>
 
