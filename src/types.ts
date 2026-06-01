@@ -1,11 +1,11 @@
 export type TurmaId = 'MA' | 'MB' | 'TA' | 'TB';
 export type UCId = 'FUSI' | 'CRD' | 'LIDT';
-export type NivelDesempenho = 'NEA' | 'APO' | 'PAR' | 'AUT';
+export type NivelDesempenho = 'NSA' | 'APO' | 'PAR' | 'AUT'; // NEA alterado para NSA
 
 export interface CapacidadeTecnica {
   id: string;
   ucId: UCId;
-  codigo: string; // Ex: "CAP. 01"
+  codigo: string;
   descricao: string;
 }
 
@@ -15,5 +15,8 @@ export interface Aluno {
   turmaId: TurmaId;
   avaliacoes: {
     [capacidadeId: string]: NivelDesempenho;
+  };
+  observacoes: {
+    [capacidadeId: string]: string; // Campo de anotação por capacidade técnica/UC
   };
 }
