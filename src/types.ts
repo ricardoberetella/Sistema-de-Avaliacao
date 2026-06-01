@@ -1,5 +1,5 @@
 export type TurmaId = 'MA' | 'MB' | 'TA' | 'TB';
-export type UCId = 'FUSI' | 'CRD';
+export type UCId = 'FUSI' | 'CRD' | 'LIDT';
 export type NivelDesempenho = 'NEA' | 'APO' | 'PAR' | 'AUT';
 
 export interface CapacidadeTecnica {
