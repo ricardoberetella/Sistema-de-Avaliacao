@@ -23,7 +23,6 @@ export default function App() {
   useEffect(() => {
     const colRef = collection(db, 'alunos');
     
-    // O onSnapshot atualiza a tela do professor na mesma hora se houver mudanças
     const unsubscribe = onSnapshot(colRef, (snapshot) => {
       const listaAlunos: Aluno[] = [];
       snapshot.forEach((docSnap) => {
@@ -53,7 +52,6 @@ export default function App() {
     const nomeFormatado = novoNome.trim().toUpperCase();
 
     try {
-      // Cria o documento na coleção 'alunos' com o ID gerado
       await setDoc(doc(db, 'alunos', idGerado), {
         nome: nomeFormatado,
         turmaId: turmaAtiva,
