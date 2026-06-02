@@ -1,6 +1,14 @@
+// src/types.ts
+
+// Identificadores de Turmas: MDU-M (Manhã: MA/MB) e MDU-T (Tarde: TA/TB)
 export type TurmaId = 'MA' | 'MB' | 'TA' | 'TB';
+
+// Unidades Curriculares: Fundamentos de Usinagem, Controle Dimensional e Desenho Técnico
 export type UCId = 'FUSI' | 'CRD' | 'LIDT';
-export type NivelDesempenho = 'NSA' | 'APO' | 'PAR' | 'AUT'; // NEA alterado para NSA
+
+// Níveis de Desempenho (Rúbricas da Série Metódica Ocupacional)
+// NSA: Não Satisfez | APO: Com Apoio | PAR: Parcial | AUT: Autônomo
+export type NivelDesempenho = 'NSA' | 'APO' | 'PAR' | 'AUT';
 
 export interface CapacidadeTecnica {
   id: string;
@@ -10,13 +18,13 @@ export interface CapacidadeTecnica {
 }
 
 export interface Aluno {
-  id: string;
+  id: string; // ID gerado automaticamente pelo Firebase Firestore na nuvem
   nome: string;
   turmaId: TurmaId;
   avaliacoes: {
     [capacidadeId: string]: NivelDesempenho;
   };
   observacoes: {
-    [capacidadeId: string]: string; // Campo de anotação por capacidade técnica/UC
+    [capacidadeId: string]: string; // Histórico técnico e anotações de tolerância/oficina por capacidade
   };
 }
