@@ -2,48 +2,32 @@
 import { CapacidadeTecnica, NivelDesempenho } from './types';
 
 export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
-  // --- FUSI - FUNDAMENTOS DA USINAGEM ---
-  { id: 'fusi_01', ucId: 'FUSI', codigo: 'CT01', descricao: 'Selecionar ferramentas aplicadas na montagem e desmontagem de elementos de máquina.' },
-  { id: 'fusi_02', ucId: 'FUSI', codigo: 'CT02', descricao: 'Relacionar os processos de fabricação à sua aplicação na indústria.' },
-  { id: 'fusi_03', ucId: 'FUSI', codigo: 'CT03', descricao: 'Relacionar os tipos de manutenção à sua aplicação na indústria.' },
-  { id: 'fusi_04', ucId: 'FUSI', codigo: 'CT04', descricao: 'Elaborar plano de trabalho de acordo com normas e procedimentos de meio ambiente, de saúde e segurança no trabalho.' },
-  { id: 'fusi_05', ucId: 'FUSI', codigo: 'CT05', descricao: 'Definir os parâmetros de usinagem de torneamento e fresagem convencional de acordo com as especificações técnicas.' },
-  { id: 'fusi_06', ucId: 'FUSI', codigo: 'CT06', descricao: 'Realizar operações de baixa complexidade em torno convencional de acordo com as especificações, normas técnicas e de saúde e segurança no trabalho.' },
-  { id: 'fusi_07', ucId: 'FUSI', codigo: 'CT07', descricao: 'Realizar operações de baixa complexidade em fresadora convencional de acordo com as especificações, normas técnicas e de saúde e segurança no trabalho.' },
-  { id: 'fusi_08', ucId: 'FUSI', codigo: 'CT08', descricao: 'Realizar operações de furação de acordo com as especificações, normas técnicas e de saúde e segurança no trabalho.' },
-  { id: 'fusi_09', ucId: 'FUSI', codigo: 'CT09', descricao: 'Realizar operações de rosqueamento de acordo com as especificações, normas técnicas e de saúde e segurança no trabalho.' },
-  { id: 'fusi_10', ucId: 'FUSI', codigo: 'CT10', descricao: 'Realizar operações de ajustagem em peças por meio de ferramentas manuais de acordo com as especificações e normas técnicas e de saúde e segurança no trabalho.' },
-  { id: 'fusi_11', ucId: 'FUSI', codigo: 'CT11', descricao: 'Controlar a qualidade das peças usinadas em tornos e fresadoras convencionais, visualmente e por meio de instrumentos de acordo com as especificações técnicas.' },
-  { id: 'fusi_12', ucId: 'FUSI', codigo: 'CT12', descricao: 'Aplicar os procedimentos de refrigeração nos processos de torneamento e fresagem convencional.' },
+  // FUSI - Fundamentos da Usinagem
+  { id: 'fusi_cap1', codigo: 'CAP.01 (FUSI)', ucId: 'FUSI', descricao: 'Planejar o processo de usinagem convencional determinando ferramentas, parâmetros de corte e sequência operacional.' },
+  { id: 'fusi_cap2', codigo: 'CAP.02 (FUSI)', ucId: 'FUSI', descricao: 'Operar torno mecânico convencional realizando operações de faceamento, torneamento cilíndrico, canais e roscas.' },
+  { id: 'fusi_cap3', codigo: 'CAP.03 (FUSI)', ucId: 'FUSI', descricao: 'Operar fresadora mecânica convencional realizando superfícies planas, paralelas, esquadrejamento e canais.' },
+  { id: 'fusi_cap4', codigo: 'CAP.04 (FUSI)', ucId: 'FUSI', descricao: 'Controlar as dimensões das peças usinadas aplicando técnicas de medição e segurança no trabalho.' },
 
-  // --- CRD - CONTROLE DIMENSIONAL ---
-  { id: 'crd_01', ucId: 'CRD', codigo: 'CT01', descricao: 'Identificar a importância da metrologia na indústria metalmecânica.' },
-  { id: 'crd_02', ucId: 'CRD', codigo: 'CT02', descricao: 'Medir peças com escala.' },
-  { id: 'crd_03', ucId: 'CRD', codigo: 'CT03', descricao: 'Medir peças com trena.' },
-  { id: 'crd_04', ucId: 'CRD', codigo: 'CT04', descricao: 'Medir peças com paquímetro.' },
-  { id: 'crd_05', ucId: 'CRD', codigo: 'CT05', descricao: 'Medir peças no sistema métrico com micrômetro.' },
-  { id: 'crd_06', ucId: 'CRD', codigo: 'CT06', descricao: 'Verificar dimensões e perfis com verificadores.' },
-  { id: 'crd_07', ucId: 'CRD', codigo: 'CT07', descricao: 'Medir por comparação com relógio apalpador e comparador.' },
-  { id: 'crd_08', ucId: 'CRD', codigo: 'CT08', descricao: 'Medir peças com goniômetro.' },
+  // CRD - Controle Dimensional
+  { id: 'crd_cap1', codigo: 'CAP.01 (CRD)', ucId: 'CRD', descricao: 'Utilizar paquímetro mecânico e digital com resolução de 0,05mm e 0,02mm na validação de componentes mecânicos.' },
+  { id: 'crd_cap2', codigo: 'CAP.02 (CRD)', ucId: 'CRD', descricao: 'Utilizar micrômetro externo com resolução de 0,01mm para medição de eixos e diâmetros de precisão.' },
+  { id: 'crd_cap3', codigo: 'CAP.03 (CRD)', ucId: 'CRD', descricao: 'Realizar medições angulares utilizando goniômetro mecânico conforme especificações de desenho.' },
 
-  // --- LIDT - LEITURA E INTERPRETAÇÃO DE DESENHO TÉCNICO ---
-  { id: 'lidt_01', ucId: 'LIDT', codigo: 'CT01', descricao: 'Interpretar desenhos técnicos de peças a partir de projetos da metalmecânica.' },
-  { id: 'lidt_02', ucId: 'LIDT', codigo: 'CT02', descricao: 'Elaborar croquis de peças em projeção ortogonal e em perspectiva à mão livre, a partir de modelos.' },
-  { id: 'lidt_03', ucId: 'LIDT', codigo: 'CT03', descricao: 'Interpretar desenho técnico de montagem de conjunto e subconjuntos a partir de projetos da metalmecânica.' },
-  { id: 'lidt_04', ucId: 'LIDT', codigo: 'CT04', descricao: 'Interpretar tolerância dimensional, geométrica e de acabamento superficial em desenho técnico.' },
+  // LIDT - Leitura e Interpretação de Desenho Técnico
+  { id: 'lidt_cap1', codigo: 'CAP.01 (LIDT)', ucId: 'LIDT', descricao: 'Interpretar vistas ortográficas, cortes e seções de conjuntos mecânicos conforme normas ABNT.' },
+  { id: 'lidt_cap2', codigo: 'CAP.02 (LIDT)', ucId: 'LIDT', descricao: 'Identificar tolerâncias lineares, geométricas e estados de superfície (rugosidade) em desenhos de fabricação.' },
 
-  // --- CMAT - CIÊNCIA DOS MATERIAIS ---
-  { id: 'cmat_01', ucId: 'CMAT', codigo: 'CT01', descricao: 'Identificar componentes da estrutura atômica e a organização da tabela periódica.' },
-  { id: 'cmat_02', ucId: 'CMAT', codigo: 'CT02', descricao: 'Identificar a classificação e as propriedades dos materiais.' },
-  { id: 'cmat_03', ucId: 'CMAT', codigo: 'CT03', descricao: 'Identificar grandezas físicas.' }
+  // CMAT - Ciência dos Materiais
+  { id: 'cmat_cap1', codigo: 'CAP.01 (CMAT)', ucId: 'CMAT', descricao: 'Selecionar materiais metálicos (ferrosos e não-ferrosos) adequados ao processo de usinagem com base em suas propriedades.' },
+  { id: 'cmat_cap2', codigo: 'CAP.02 (CMAT)', ucId: 'CMAT', descricao: 'Identificar a influência de tratamentos térmicos na usinabilidade e dureza dos aços operados na oficina.' }
 ];
 
 export function getDescricaoRubrica(capacidadeId: string, nivel: NivelDesempenho): string {
-  switch (nivel) {
-    case 'NSA': return 'Não Satisfez os critérios mínimos avaliados.';
-    case 'APO': return 'Demonstra dificuldades e necessita de apoio constante do instrutor.';
-    case 'PAR': return 'Realiza a atividade de forma parcial, com pequenas oscilações de performance.';
-    case 'AUT': return 'Autônomo. Executa a competência com precisão, segurança e sem auxílio.';
-    default: return '';
-  }
+  const descricoes: Record<NivelDesempenho, string> = {
+    NSA: 'Não Satisfez: Não realiza a operação ou exige intervenção total para manter os padrões técnicos de tolerância.',
+    APO: 'Com Apoio: Realiza a operação técnica apresentando dúvidas frequentes e necessitando de orientação constante do instrutor.',
+    PAR: 'Parcial: Executa a tarefa com segurança, mas comete pequenos desvios de acabamento ou tempo de fabricação estabelecido.',
+    AUT: 'Autônomo: Executa a operação com total precisão, respeitando tolerâncias do desenho, normas de segurança e tempo padrão.'
+  };
+  return descricoes[nivel];
 }
