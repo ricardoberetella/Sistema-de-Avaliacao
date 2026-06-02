@@ -3,9 +3,8 @@ import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './type
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
 
-// IMPORTAÇÃO DA CONEXÃO DO FIREBASE
-import { db } from './firebase';
-import { collection, onSnapshot, doc, addDoc, updateDoc } from 'firebase/firestore';
+// IMPORTAÇÃO DA CONEXÃO DO SUPABASE
+import { supabase } from './supabase';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
@@ -19,52 +18,76 @@ export default function App() {
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  // SINCRONIZAÇÃO EM TEMPO REAL COM O FIREBASE
+  // CARREGAMENTO E SINCRONIZAÇÃO EM TEMPO REAL COM O SUPABASE
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'alunos'), (snapshot) => {
-      const listaAlunos: Aluno[] = [];
-      snapshot.forEach((docSnap) => {
-        const dados = docSnap.data();
-        listaAlunos.push({
-          id: docSnap.id, // O ID agora vem diretamente do documento da nuvem
-          nome: dados.nome,
-          turmaId: dados.turmaId,
-          avaliacoes: dados.avaliacoes || {},
-          observacoes: dados.observacoes || {}
-        });
-      });
-      setAlunos(listaAlunos);
-    });
+    // Busca inicial dos alunos
+    const buscarAlunos = async () => {
+      const { data, error } = await supabase
+        .from('alunos')
+        .select('*');
+      
+      if (error) {
+        console.error("Erro ao buscar alunos:", error);
+      } else if (data) {
+        // Garante que avaliacoes e observacoes comecem como objetos se vierem nulos
+        const lista Formatada = data.map((a: any) => ({
+          id: String(a.id),
+          nome: a.nome,
+          turmaId: a.turma_id || a.turmaId,
+          avaliacoes: a.avaliacoes || {},
+          observacoes: a.observacoes || {}
+        }));
+        setAlunos(listaFormatada);
+      }
+    };
 
-    return () => unsubscribe();
+    buscarAlunos();
+
+    // Escuta em tempo real se houver alterações no banco do Supabase
+    const canalAlunos = supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alunos' }, () => {
+        buscarAlunos();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(canalAlunos);
+    };
   }, []);
 
-  // ADICIONAR ALUNO DIRETAMENTE NO FIRESTORE
+  // ADICIONAR ALUNO NO SUPABASE
   const handleAddAluno = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
 
     try {
-      await addDoc(collection(db, 'alunos'), {
-        nome: novoNome.trim().toUpperCase(),
-        turmaId: turmaAtiva,
-        avaliacoes: {},
-        observacoes: {}
-      });
+      const { error } = await supabase
+        .from('alunos')
+        .insert([
+          {
+            nome: novoNome.trim().toUpperCase(),
+            turma_id: turmaAtiva, // Ajustado para o padrão snake_case do Supabase
+            avaliacoes: {},
+            observacoes: {}
+          }
+        ]);
+
+      if (error) throw error;
       setNovoNome('');
     } catch (error) {
-      console.error("Erro ao adicionar aluno na nuvem:", error);
-      alert("Erro ao salvar o aluno. Verifique a conexão.");
+      console.error("Erro ao adicionar aluno no Supabase:", error);
+      alert("Erro ao salvar o aluno. Verifique a tabela no Supabase.");
     }
   };
 
-  // DEFINIR RÚBRICA EM TEMPO REAL NA NUVEM
+  // DEFINIR RÚBRICA NO SUPABASE
   const handleDefinirRubrica = async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
     const notaAtual = alunoAlvo.avaliacoes[capacidadeId];
-    const novaNota = notaAtual === nivel ? null : nivel; // Se clicar no mesmo, desmarca
+    const novaNota = notaAtual === nivel ? null : nivel;
 
     const novasAvaliacoes = { ...alunoAlvo.avaliacoes };
     if (novaNota === null) {
@@ -74,16 +97,18 @@ export default function App() {
     }
 
     try {
-      const alunoRef = doc(db, 'alunos', alunoId);
-      await updateDoc(alunoRef, {
-        avaliacoes: novasAvaliacoes
-      });
+      const { error } = await supabase
+        .from('alunos')
+        .update({ avaliacoes: novasAvaliacoes })
+        .eq('id', alunoId);
+
+      if (error) throw error;
     } catch (error) {
-      console.error("Erro ao atualizar rubrica na nuvem:", error);
+      console.error("Erro ao atualizar rúbrica no Supabase:", error);
     }
   };
 
-  // SALVAR OBSERVAÇÃO TÉCNICA EM TEMPO REAL NA NUVEM
+  // SALVAR OBSERVAÇÃO TÉCNICA NO SUPABASE
   const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
@@ -94,12 +119,14 @@ export default function App() {
     };
 
     try {
-      const alunoRef = doc(db, 'alunos', alunoId);
-      await updateDoc(alunoRef, {
-        observacoes: novasObservacoes
-      });
+      const { error } = await supabase
+        .from('alunos')
+        .update({ observacoes: novasObservacoes })
+        .eq('id', alunoId);
+
+      if (error) throw error;
     } catch (error) {
-      console.error("Erro ao salvar observação na nuvem:", error);
+      console.error("Erro ao salvar observação no Supabase:", error);
     }
   };
 
@@ -282,7 +309,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Campo de Observações Técnico */}
+                        {/* Campo de Observações Técnicas */}
                         <div className="w-full">
                           <label className="text-[9px] font-black text-slate-400 block tracking-widest uppercase mb-1">
                             Observações e Histórico Técnico do Aluno
