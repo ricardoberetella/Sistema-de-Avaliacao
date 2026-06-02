@@ -10,6 +10,7 @@ interface CapacidadeCardProps {
 }
 
 export default function CapacidadeCard({ capacidade, alunosAvaliados, alunosAutonomos, totalAlunos, onClick }: CapacidadeCardProps) {
+  // Calcula a porcentagem da barra de progresso dos alunos avaliados na oficina
   const porcentagem = totalAlunos > 0 ? (alunosAvaliados / totalAlunos) * 100 : 0;
 
   return (
