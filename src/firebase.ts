@@ -1,17 +1,20 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+// src/firebase.ts
+import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
+// Configuração oficial do seu projeto sistema-de-avaliacao-26657
 const firebaseConfig = {
-  apiKey: "AIzaSyC_IWOMMMbCj9AnXj_TsnMqHgIef_uJmvY",
-  authDomain: "sistema-de-avaliacao-2bb07.firebaseapp.com",
-  projectId: "sistema-de-avaliacao-2bb07",
-  storageBucket: "sistema-de-avaliacao-2bb07.appspot.com",
-  messagingSenderId: "581224749980",
-  appId: "1:581224749980:web:715077a0751da70cc7083a",
-  measurementId: "G-ZZJXBYXN7P"
+  apiKey: "AIzaSyC_ZM0WMWbCgJNzjLTzuHgQFg7_uXwyY",
+  authDomain: "sistema-de-avaliacao-26657.firebaseapp.com",
+  projectId: "sistema-de-avaliacao-26657",
+  storageBucket: "sistema-de-avaliacao-26657.appspot.com",
+  messagingSenderId: "301224749983",
+  appId: "1:301224749983:web:75387ab7916e7bcf9583cc",
+  measurementId: "G-J2JXBXYH7F"
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// Inicializa o Firebase
+const app = initializeApp(firebaseConfig);
 
+// Inicializa e exporta o Banco de Dados (Firestore)
 export const db = getFirestore(app);
-export default app;
