@@ -3,7 +3,6 @@ import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './type
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
 
-// CONEXÃO COM O SEU FIRESTORE DO GOOGLE
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore';
 
@@ -19,7 +18,6 @@ export default function App() {
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  // ESCUTA O BANCO DE DADOS EM TEMPO REAL
   useEffect(() => {
     const colRef = collection(db, 'alunos');
     
@@ -35,21 +33,23 @@ export default function App() {
           observacoes: dados.observacoes || {}
         });
       });
+      listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
       setAlunos(listaAlunos);
     }, (error) => {
-      console.error("Erro ao escutar Firestore:", error);
+      console.error("Erro no Firestore:", error);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // SALVA O NOVO ALUNO NO BANCO
   const handleAddAluno = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
 
     const idGerado = crypto.randomUUID();
     const nomeFormatado = novoNome.trim().toUpperCase();
+    
+    setNovoNome('');
 
     try {
       await setDoc(doc(db, 'alunos', idGerado), {
@@ -58,26 +58,26 @@ export default function App() {
         avaliacoes: {},
         observacoes: {}
       });
-      setNovoNome('');
     } catch (error) {
-      console.error("Erro ao adicionar aluno no Firebase:", error);
+      console.error("Erro ao adicionar aluno:", error);
     }
   };
 
-  // GRAVA A RÚBRICA DA SÉRIE METÓDICA NO FIREBASE
   const handleDefinirRubrica = async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
-    const notaAtual = alunoAlvo.avaliacoes[capacidadeId];
+    const notaAtual = alunoAlvo.avaliacoes?.[capacidadeId];
     const novaNota = notaAtual === nivel ? null : nivel;
 
-    const novasAvaliacoes = { ...alunoAlvo.avaliacoes };
+    const novasAvaliacoes = { ...(alunoAlvo.avaliacoes || {}) };
     if (novaNota === null) {
       delete novasAvaliacoes[capacidadeId];
     } else {
       novasAvaliacoes[capacidadeId] = nivel;
     }
+
+    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, avaliacoes: novasAvaliacoes } : a));
 
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
@@ -88,15 +88,16 @@ export default function App() {
     }
   };
 
-  // GRAVA A OBSERVAÇÃO/HISTÓRICO TÉCNICO NO FIREBASE
   const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
     const novasObservacoes = {
-      ...alunoAlvo.observacoes,
+      ...(alunoAlvo.observacoes || {}),
       [capacidadeId]: texto
     };
+
+    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
 
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
@@ -118,7 +119,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      {/* HEADER INSTITUCIONAL */}
       <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic">
@@ -152,7 +152,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Seletor de Turma */}
         <div className="bg-[#003670] p-1 rounded-xl flex items-center shadow-inner shrink-0">
           {turmasDisponiveis.map((t) => (
             <button
@@ -196,7 +195,6 @@ export default function App() {
           </form>
         </div>
 
-        {/* LISTAGEM DOS CARDS DE CAPACIDADE */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {capacidadesFiltradas.map((cap) => (
             <CapacidadeCard
@@ -206,11 +204,10 @@ export default function App() {
               alunosAutonomos={getAlunosAutonomosCount(cap.id)}
               totalAlunos={alunosDaTurma.length}
               onClick={() => setCapSelecionada(cap)}
-            />
+          />
           ))}
         </div>
 
-        {/* DIÁRIO DE CLASSE / MAPA DE NOTAS */}
         {capSelecionada && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
@@ -291,7 +288,7 @@ export default function App() {
                           <textarea
                             value={textoObs}
                             onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                            placeholder="Digite aqui anotações sobre tolerância, comportamento na oficina ou pontos a recuperar..."
+                            placeholder="Digite aqui anotações sobre tolerância, comportamento na oficina..."
                             rows={2}
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 resize-y"
                           />
