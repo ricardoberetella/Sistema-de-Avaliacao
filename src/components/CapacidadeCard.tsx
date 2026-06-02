@@ -3,6 +3,7 @@ import React from 'react';
 import { CapacidadeTecnica } from '../types';
 
 interface CapacidadeCardProps {
+  key: string; // Adicionado para resolver o erro TS2322 do build
   capacidade: CapacidadeTecnica;
   alunosAvaliados: number;
   alunosAutonomos: number;
