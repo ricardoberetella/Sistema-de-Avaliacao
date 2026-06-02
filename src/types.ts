@@ -1,7 +1,7 @@
 // src/types.ts
 
 export type TurmaId = 'MA' | 'MB' | 'TA' | 'TB';
-export type UCId = 'FUSI' | 'CRD' | 'LIDT';
+export type UCId = 'FUSI' | 'CRD' | 'LIDT'| 'CMAT';
 export type NivelDesempenho = 'NSA' | 'APO' | 'PAR' | 'AUT';
 
 export interface CapacidadeTecnica {
