@@ -83,7 +83,7 @@ export default function App() {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
-    // CORRIGIDO: de capacityId para capacidadeId conforme definido nos parâmetros da função
+    // CORRIGIDO TOTALMENTE: Garantindo consistência de nomes para evitar erros na Vercel
     const notaAtual = alunoAlvo.avaliacoes?.[capacidadeId];
     const novaNota = notaAtual === nivel ? null : nivel;
 
