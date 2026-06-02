@@ -6,12 +6,16 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
+
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
   const [ucAtiva, setUcAtiva] = useState<UCId>('FUSI');
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [novoNome, setNovoNome] = useState('');
   const [capSelecionada, setCapSelecionada] = useState<CapacidadeTecnica | null>(null);
+  const [verGraficos, setVerGraficos] = useState(false);
 
   const turmasDisponiveis: TurmaId[] = ['MA', 'MB', 'TA', 'TB'];
   
@@ -99,13 +103,13 @@ export default function App() {
     }
   };
 
-  const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
+  const handleMudarObservacao = async (alunoId: string, capacidadId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
     const novasObservacoes = {
       ...(alunoAlvo.observacoes || {}),
-      [capacidadeId]: texto
+      [capacidadId]: texto
     };
 
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
@@ -119,12 +123,49 @@ export default function App() {
     }
   };
 
-  const getAlunosAvaliadosCount = (capId: string) => {
-    return alunosDaTurma.filter(a => a.avaliacoes && a.avaliacoes[capId]).length;
+  // Retorna o objeto com a contagem exata das 4 rubricas para uma capacidade específica
+  const getContagemRubricas = (capId: string) => {
+    const contagem = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
+    alunosDaTurma.forEach(a => {
+      const nota = a.avaliacoes?.[capId];
+      if (nota === 'NSA' || nota === 'APO' || nota === 'PAR' || nota === 'AUT') {
+        contagem[nota]++;
+      }
+    });
+    return contagem;
   };
 
-  const getAlunosAutonomosCount = (capId: string) => {
-    return alunosDaTurma.filter(a => a.avaliacoes && a.avaliacoes[capId] === 'AUT').length;
+  // Consolidação de estatísticas da UC para a tela de gráficos
+  const totalGeralRubricas = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
+  capacidadesFiltradas.forEach(cap => {
+    const c = getContagemRubricas(cap.id);
+    totalGeralRubricas.NSA += c.NSA;
+    totalGeralRubricas.APO += c.APO;
+    totalGeralRubricas.PAR += c.PAR;
+    totalGeralRubricas.AUT += c.AUT;
+  });
+  const somaTotalNotas = totalGeralRubricas.NSA + totalGeralRubricas.APO + totalGeralRubricas.PAR + totalGeralRubricas.AUT;
+
+  // Função robusta para exportação de Relatório PDF Padrão SENAI
+  const exportarRelatorioPDF = () => {
+    const elemento = document.getElementById('relatorio-pdf-container');
+    if (!elemento) return;
+
+    const nomeDaUc = ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : ucAtiva === 'LIDT' ? 'Leitura de Desenho Técnico' : 'Ciência dos Materiais';
+
+    const opt = {
+      margin: 10,
+      filename: `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    // Exibe temporariamente a div oculta do PDF antes do print
+    elemento.classList.remove('hidden');
+    html2pdf().set(opt).from(elemento).save().then(() => {
+      elemento.classList.add('hidden');
+    });
   };
 
   return (
@@ -141,30 +182,15 @@ export default function App() {
             </h1>
             
             <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 justify-center sm:justify-start">
-              <button 
-                onClick={() => { setUcAtiva('FUSI'); setCapSelecionada(null); }}
-                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'FUSI' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
-              >
-                FUSI (Usinagem)
-              </button>
-              <button 
-                onClick={() => { setUcAtiva('CRD'); setCapSelecionada(null); }}
-                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'CRD' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
-              >
-                CRD (Metrologia)
-              </button>
-              <button 
-                onClick={() => { setUcAtiva('LIDT'); setCapSelecionada(null); }}
-                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'LIDT' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
-              >
-                LIDT (Desenho Técnico)
-              </button>
-              <button 
-                onClick={() => { setUcAtiva('CMAT'); setCapSelecionada(null); }}
-                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'CMAT' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
-              >
-                CMAT (Matérias)
-              </button>
+              {(['FUSI', 'CRD', 'LIDT', 'CMAT'] as UCId[]).map((sigla) => (
+                <button 
+                  key={sigla}
+                  onClick={() => { setUcAtiva(sigla); setCapSelecionada(null); }}
+                  className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === sigla ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+                >
+                  {sigla === 'FUSI' ? 'FUSI (Usinagem)' : sigla === 'CRD' ? 'CRD (Metrologia)' : sigla === 'LIDT' ? 'LIDT (Desenho)' : 'CMAT (Materiais)'}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -185,14 +211,28 @@ export default function App() {
       </header>
 
       <main className="p-8 max-w-[1600px] mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-3xl font-black italic text-[#004fa3] uppercase tracking-tight">
               TURMA {turmaAtiva}
             </h2>
             <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
               {ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : ucAtiva === 'LIDT' ? 'Leitura de Desenho Técnico' : 'Ciência dos Materiais'}
             </span>
+            
+            {/* Botões Analíticos de Gráficos e Exportação */}
+            <button
+              onClick={() => setVerGraficos(true)}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] rounded-lg tracking-wider uppercase flex items-center gap-1 shadow-sm transition-colors"
+            >
+              📊 Estatísticas da Turma
+            </button>
+            <button
+              onClick={exportarRelatorioPDF}
+              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-black text-[10px] rounded-lg tracking-wider uppercase flex items-center gap-1 shadow-sm transition-colors"
+            >
+              Doc. PDF 📄
+            </button>
           </div>
 
           <form onSubmit={handleAddAluno} className="flex items-center gap-3 w-full sm:w-auto">
@@ -217,14 +257,14 @@ export default function App() {
             <CapacidadeCard
               key={cap.id}
               capacidade={cap}
-              alunosAvaliados={getAlunosAvaliadosCount(cap.id)}
-              alunosAutonomos={getAlunosAutonomosCount(cap.id)}
+              contagemRubricas={getContagemRubricas(cap.id)}
               totalAlunos={alunosDaTurma.length}
               onClick={() => setCapSelecionada(cap)}
             />
           ))}
         </div>
 
+        {/* --- MODAL DIÁRIO DE CLASSE (LANÇAMENTO DE NOTAS E EXCLUSÃO) --- */}
         {capSelecionada && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
@@ -263,11 +303,10 @@ export default function App() {
                             <button
                               type="button"
                               onClick={() => handleExcluirAluno(aluno.id, aluno.nome)}
-                              className="mt-4 sm:mt-0 p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors group flex items-center justify-center gap-1"
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors flex items-center justify-center text-xs"
                               title="Excluir Aluno"
                             >
-                              <span className="text-[14px]">🗑️</span>
-                              <span className="text-[9px] font-black tracking-tight uppercase pr-1 hidden group-hover:inline">Excluir</span>
+                              🗑️
                             </button>
                           </div>
 
@@ -340,6 +379,101 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* --- MODAL DE GRÁFICOS E ESTATÍSTICAS DA TURMA --- */}
+        {verGraficos && (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white w-full max-w-2xl rounded-[24px] shadow-2xl p-6 border border-slate-100 relative">
+              <button 
+                onClick={() => setVerGraficos(false)} 
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold"
+              >
+                ✕
+              </button>
+              
+              <h3 className="text-xl font-black text-[#004fa3] mb-1 uppercase tracking-tight">📊 Estatísticas Analíticas</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase mb-6">Turma {turmaAtiva} • {ucAtiva}</p>
+              
+              {somaTotalNotas === 0 ? (
+                <p className="text-center text-xs font-bold text-slate-400 py-8 bg-slate-50 rounded-xl border border-dashed">Nenhuma avaliação realizada nesta Unidade Curricular ainda.</p>
+              ) : (
+                <div className="space-y-4">
+                  {(['AUT', 'PAR', 'APO', 'NSA'] as NivelDesempenho[]).map(nivel => {
+                    const qtd = totalGeralRubricas[nivel];
+                    const pct = Math.round((qtd / somaTotalNotas) * 100);
+                    
+                    const coresBarra = {
+                      AUT: 'bg-emerald-600',
+                      PAR: 'bg-blue-600',
+                      APO: 'bg-amber-500',
+                      NSA: 'bg-red-600'
+                    };
+
+                    const nomesNivel = { AUT: 'Autônomo (AUT)', PAR: 'Parcial (PAR)', APO: 'Com Apoio (APO)', NSA: 'Não Satisfez (NSA)' };
+
+                    return (
+                      <div key={nivel} className="space-y-1">
+                        <div className="flex justify-between text-xs font-black text-slate-700">
+                          <span>{nomesNivel[nivel]}</span>
+                          <span>{qtd} ({pct}%)</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden shadow-inner">
+                          <div className={`h-full ${coresBarra[nivel]} transition-all`} style={{ width: `${pct}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="text-right pt-4 border-t text-[10px] font-black text-slate-400 uppercase">
+                    Total de avaliações computadas nesta UC: {somaTotalNotas}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- ESTRUTURA OCULTA IMPRESSA NO RELATÓRIO PDF --- */}
+        <div id="relatorio-pdf-container" className="hidden p-8 bg-white text-slate-900 font-sans w-[297mm]">
+          <div className="border-4 border-[#004fa3] p-6 rounded-xl space-y-6">
+            <div className="flex justify-between items-center border-b-4 border-red-600 pb-4">
+              <div>
+                <span className="bg-red-600 text-white px-4 py-1 text-xl font-black tracking-tight italic rounded-sm">SENAI</span>
+                <h2 className="text-xl font-black uppercase mt-2 tracking-wide text-[#004fa3]">Pauta de Avaliação Por Rubricas</h2>
+              </div>
+              <div className="text-right text-xs font-black uppercase text-slate-500">
+                <p>Curso: Mecânico de Usinagem</p>
+                <p>Turma: {turmaAtiva} • UC: {ucAtiva}</p>
+              </div>
+            </div>
+
+            <table className="w-full text-[10px] border-collapse border border-slate-300">
+              <thead>
+                <tr className="bg-slate-100 text-slate-700 uppercase font-black">
+                  <th className="border border-slate-300 p-2 text-left w-1/3">Estudante</th>
+                  {capacidadesFiltradas.map(c => (
+                    <th key={c.id} className="border border-slate-300 p-2 text-center" title={c.descricao}>{c.codigo}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {alunosDaTurma.map(aluno => (
+                  <tr key={aluno.id} className="hover:bg-slate-50 font-bold uppercase text-slate-800">
+                    <td className="border border-slate-300 p-2 text-left font-black">{aluno.nome}</td>
+                    {capacidadesFiltradas.map(c => {
+                      const nota = aluno.avaliacoes?.[c.id] || '-';
+                      return (
+                        <td key={c.id} className={`border border-slate-300 p-2 text-center font-black text-xs ${
+                          nota === 'AUT' ? 'text-emerald-600' : nota === 'PAR' ? 'text-blue-600' : nota === 'APO' ? 'text-amber-600' : nota === 'NSA' ? 'text-red-600' : 'text-slate-300'
+                        }`}>{nota}</td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </main>
     </div>
   );
