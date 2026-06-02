@@ -3,7 +3,6 @@ import React from 'react';
 import { CapacidadeTecnica } from '../types';
 
 interface CapacidadeCardProps {
-  key: string;
   capacidade: CapacidadeTecnica;
   contagemRubricas: {
     NSA: number;
@@ -49,7 +48,6 @@ export default function CapacidadeCard({
           <span className="text-[11px] font-black text-slate-700">{totalAvaliados}/{totalAlunos} ({percentualAvaliado}%)</span>
         </div>
         
-        {/* Fileira com as 4 Rubricas Oficiais */}
         <div className="grid grid-cols-4 gap-1 text-center text-[10px] font-black">
           <div className="bg-red-50 text-red-700 p-1 rounded-md" title="Não Satisfez">
             <span className="block text-[8px] text-red-400 uppercase">NSA</span>
