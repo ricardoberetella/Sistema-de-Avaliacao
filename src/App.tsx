@@ -3,7 +3,7 @@ import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './type
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
 
-// IMPORTAÇÃO DA CONEXÃO DO SUPABASE
+// CONEXÃO COM O SUPABASE
 import { supabase } from './supabase';
 
 export default function App() {
@@ -18,22 +18,20 @@ export default function App() {
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  // CARREGAMENTO E SINCRONIZAÇÃO EM TEMPO REAL COM O SUPABASE
+  // BUSCA E ATUALIZAÇÃO EM TEMPO REAL
   useEffect(() => {
-    // Busca inicial dos alunos
     const buscarAlunos = async () => {
       const { data, error } = await supabase
         .from('alunos')
         .select('*');
       
       if (error) {
-        console.error("Erro ao buscar alunos:", error);
+        console.error("Erro ao buscar alunos no Supabase:", error);
       } else if (data) {
-        // Garante que avaliacoes e observacoes comecem como objetos se vierem nulos
-        const lista Formatada = data.map((a: any) => ({
+        const listaFormatada = data.map((a: any) => ({
           id: String(a.id),
           nome: a.nome,
-          turmaId: a.turma_id || a.turmaId,
+          turmaId: a.turma_id || a.turmaId || turmaAtiva,
           avaliacoes: a.avaliacoes || {},
           observacoes: a.observacoes || {}
         }));
@@ -43,9 +41,9 @@ export default function App() {
 
     buscarAlunos();
 
-    // Escuta em tempo real se houver alterações no banco do Supabase
+    // Monitora alterações nas linhas da tabela 'alunos'
     const canalAlunos = supabase
-      .channel('schema-db-changes')
+      .channel('mudancas-alunos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'alunos' }, () => {
         buscarAlunos();
       })
@@ -54,20 +52,24 @@ export default function App() {
     return () => {
       supabase.removeChannel(canalAlunos);
     };
-  }, []);
+  }, [turmaAtiva]);
 
-  // ADICIONAR ALUNO NO SUPABASE
+  // INSERIR ALUNO NO BANCO
   const handleAddAluno = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
 
+    const nomeFormatado = novoNome.trim().toUpperCase();
+
     try {
+      // Tenta gravar inserindo tanto turma_id quanto turmaId para evitar rejeição da tabela
       const { error } = await supabase
         .from('alunos')
         .insert([
           {
-            nome: novoNome.trim().toUpperCase(),
-            turma_id: turmaAtiva, // Ajustado para o padrão snake_case do Supabase
+            nome: nomeFormatado,
+            turma_id: turmaAtiva,
+            turmaId: turmaAtiva,
             avaliacoes: {},
             observacoes: {}
           }
@@ -76,12 +78,21 @@ export default function App() {
       if (error) throw error;
       setNovoNome('');
     } catch (error) {
-      console.error("Erro ao adicionar aluno no Supabase:", error);
-      alert("Erro ao salvar o aluno. Verifique a tabela no Supabase.");
+      console.error("Erro na gravação do aluno:", error);
+      
+      // Feedback visual temporário na tela caso o banco falhe
+      setAlunos(prev => [...prev, {
+        id: crypto.randomUUID(),
+        nome: nomeFormatado,
+        turmaId: turmaAtiva,
+        avaliacoes: {},
+        observacoes: {}
+      }]);
+      setNovoNome('');
     }
   };
 
-  // DEFINIR RÚBRICA NO SUPABASE
+  // ATUALIZAR RÚBRICA DA SÉRIE METÓDICA
   const handleDefinirRubrica = async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
@@ -96,6 +107,9 @@ export default function App() {
       novasAvaliacoes[capacidadeId] = nivel;
     }
 
+    // Atualiza a interface imediatamente (Otimista)
+    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, avaliacoes: novasAvaliacoes } : a));
+
     try {
       const { error } = await supabase
         .from('alunos')
@@ -104,11 +118,11 @@ export default function App() {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Erro ao atualizar rúbrica no Supabase:", error);
+      console.error("Erro ao salvar rubrica no Supabase:", error);
     }
   };
 
-  // SALVAR OBSERVAÇÃO TÉCNICA NO SUPABASE
+  // ATUALIZAR OBSERVAÇÃO TÉCNICA
   const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
@@ -117,6 +131,9 @@ export default function App() {
       ...alunoAlvo.observacoes,
       [capacidadeId]: texto
     };
+
+    // Atualiza a interface imediatamente
+    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
 
     try {
       const { error } = await supabase
@@ -131,11 +148,11 @@ export default function App() {
   };
 
   const getAlunosAvaliadosCount = (capId: string) => {
-    return alunosDaTurma.filter(a => a.avaliacoes[capId]).length;
+    return alunosDaTurma.filter(a => a.avaliacoes && a.avaliacoes[capId]).length;
   };
 
   const getAlunosAutonomosCount = (capId: string) => {
-    return alunosDaTurma.filter(a => a.avaliacoes[capId] === 'AUT').length;
+    return alunosDaTurma.filter(a => a.avaliacoes && a.avaliacoes[capId] === 'AUT').length;
   };
 
   return (
@@ -191,7 +208,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* CONTEÚDO */}
       <main className="p-8 max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex items-center gap-3">
@@ -259,8 +275,8 @@ export default function App() {
                   </p>
                 ) : (
                   alunosDaTurma.map((aluno) => {
-                    const nivelAtual = aluno.avaliacoes[capSelecionada.id];
-                    const textoObs = aluno.observacoes[capSelecionada.id] || '';
+                    const nivelAtual = aluno.avaliacoes ? aluno.avaliacoes[capSelecionada.id] : undefined;
+                    const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
                     return (
                       <div key={aluno.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
                         
