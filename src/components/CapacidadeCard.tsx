@@ -20,53 +20,50 @@ export default function CapacidadeCard({
   totalAlunos,
   onClick
 }: CapacidadeCardProps) {
+  
   const totalAvaliados = contagemRubricas.NSA + contagemRubricas.APO + contagemRubricas.PAR + contagemRubricas.AUT;
-  const percentualAvaliado = totalAlunos > 0 ? Math.round((totalAvaliados / totalAlunos) * 100) : 0;
+  const porcentagemAgendada = totalAlunos > 0 ? Math.round((totalAvaliados / totalAlunos) * 100) : 0;
 
   return (
-    <button
+    <div 
       onClick={onClick}
-      className="bg-white p-5 rounded-[20px] border border-slate-200 text-left transition-all hover:shadow-md hover:border-blue-400 group flex flex-col justify-between min-h-[210px] w-full"
+      className="bg-white rounded-[20px] p-5 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer flex flex-col justify-between min-h-[210px] group"
     >
-      <div className="w-full">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-xs font-black text-[#004fa3] tracking-wider uppercase bg-blue-50 px-2.5 py-1 rounded-md">
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <span className="bg-blue-50 text-[#004fa3] text-[10px] font-black px-2.5 py-1 rounded-md tracking-wider uppercase group-hover:bg-[#004fa3] group-hover:text-white transition-colors">
             {capacidade.codigo}
           </span>
-          <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-500 transition-colors">
-            Mapear Alunos ➔
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">
+            {porcentagemAgendada}% Avaliado
           </span>
         </div>
+
         <p className="text-xs font-bold text-slate-700 line-clamp-3 leading-relaxed uppercase">
           {capacidade.descricao}
         </p>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-slate-100 w-full">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[10px] font-black text-slate-400 uppercase">Progresso da Turma:</span>
-          <span className="text-[11px] font-black text-slate-700">{totalAvaliados}/{totalAlunos} ({percentualAvaliado}%)</span>
-        </div>
-        
-        <div className="grid grid-cols-4 gap-1 text-center text-[10px] font-black">
-          <div className="bg-red-50 text-red-700 p-1 rounded-md" title="Não Satisfez">
-            <span className="block text-[8px] text-red-400 uppercase">NSA</span>
-            {contagemRubricas.NSA}
+      <div className="mt-4 pt-3 border-t border-slate-100">
+        <div className="grid grid-cols-4 gap-1 text-center">
+          <div className="bg-red-50 p-1.5 rounded-lg border border-red-100">
+            <span className="block text-[9px] font-black text-red-500 uppercase tracking-tighter">NSA</span>
+            <span className="text-xs font-black text-red-700">{contagemRubricas.NSA}</span>
           </div>
-          <div className="bg-amber-50 text-amber-700 p-1 rounded-md" title="Com Apoio">
-            <span className="block text-[8px] text-amber-400 uppercase">APO</span>
-            {contagemRubricas.APO}
+          <div className="bg-amber-50 p-1.5 rounded-lg border border-amber-100">
+            <span className="block text-[9px] font-black text-amber-600 uppercase tracking-tighter">APO</span>
+            <span className="text-xs font-black text-amber-700">{contagemRubricas.APO}</span>
           </div>
-          <div className="bg-blue-50 text-blue-700 p-1 rounded-md" title="Parcial">
-            <span className="block text-[8px] text-blue-400 uppercase">PAR</span>
-            {contagemRubricas.PAR}
+          <div className="bg-blue-50 p-1.5 rounded-lg border border-blue-100">
+            <span className="block text-[9px] font-black text-blue-500 uppercase tracking-tighter">PAR</span>
+            <span className="text-xs font-black text-blue-700">{contagemRubricas.PAR}</span>
           </div>
-          <div className="bg-emerald-50 text-emerald-700 p-1 rounded-md" title="Autônomo">
-            <span className="block text-[8px] text-emerald-400 uppercase">AUT</span>
-            {contagemRubricas.AUT}
+          <div className="bg-emerald-50 p-1.5 rounded-lg border border-emerald-100">
+            <span className="block text-[9px] font-black text-emerald-500 uppercase tracking-tighter">AUT</span>
+            <span className="text-xs font-black text-emerald-700">{contagemRubricas.AUT}</span>
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
