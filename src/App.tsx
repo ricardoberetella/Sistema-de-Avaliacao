@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './types';
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
+
+// IMPORTAÇÃO DA CONEXÃO DO FIREBASE
+import { db } from './firebase';
+import { collection, onSnapshot, doc, addDoc, updateDoc } from 'firebase/firestore';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
@@ -15,47 +19,88 @@ export default function App() {
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  const handleAddAluno = (e: React.FormEvent) => {
+  // SINCRONIZAÇÃO EM TEMPO REAL COM O FIREBASE
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'alunos'), (snapshot) => {
+      const listaAlunos: Aluno[] = [];
+      snapshot.forEach((docSnap) => {
+        const dados = docSnap.data();
+        listaAlunos.push({
+          id: docSnap.id, // O ID agora vem diretamente do documento da nuvem
+          nome: dados.nome,
+          turmaId: dados.turmaId,
+          avaliacoes: dados.avaliacoes || {},
+          observacoes: dados.observacoes || {}
+        });
+      });
+      setAlunos(listaAlunos);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // ADICIONAR ALUNO DIRETAMENTE NO FIRESTORE
+  const handleAddAluno = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
 
-    const novoAluno: Aluno = {
-      id: crypto.randomUUID(),
-      nome: novoNome.trim().toUpperCase(),
-      turmaId: turmaAtiva,
-      avaliacoes: {},
-      observacoes: {}
+    try {
+      await addDoc(collection(db, 'alunos'), {
+        nome: novoNome.trim().toUpperCase(),
+        turmaId: turmaAtiva,
+        avaliacoes: {},
+        observacoes: {}
+      });
+      setNovoNome('');
+    } catch (error) {
+      console.error("Erro ao adicionar aluno na nuvem:", error);
+      alert("Erro ao salvar o aluno. Verifique a conexão.");
+    }
+  };
+
+  // DEFINIR RÚBRICA EM TEMPO REAL NA NUVEM
+  const handleDefinirRubrica = async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
+    const alunoAlvo = alunos.find(a => a.id === alunoId);
+    if (!alunoAlvo) return;
+
+    const notaAtual = alunoAlvo.avaliacoes[capacidadeId];
+    const novaNota = notaAtual === nivel ? null : nivel; // Se clicar no mesmo, desmarca
+
+    const novasAvaliacoes = { ...alunoAlvo.avaliacoes };
+    if (novaNota === null) {
+      delete novasAvaliacoes[capacidadeId];
+    } else {
+      novasAvaliacoes[capacidadeId] = nivel;
+    }
+
+    try {
+      const alunoRef = doc(db, 'alunos', alunoId);
+      await updateDoc(alunoRef, {
+        avaliacoes: novasAvaliacoes
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar rubrica na nuvem:", error);
+    }
+  };
+
+  // SALVAR OBSERVAÇÃO TÉCNICA EM TEMPO REAL NA NUVEM
+  const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
+    const alunoAlvo = alunos.find(a => a.id === alunoId);
+    if (!alunoAlvo) return;
+
+    const novasObservacoes = {
+      ...alunoAlvo.observacoes,
+      [capacidadeId]: texto
     };
 
-    setAlunos(prev => [...prev, novoAluno]);
-    setNovoNome('');
-  };
-
-  const handleDefinirRubrica = (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
-    setAlunos(prev => prev.map(aluno => {
-      if (aluno.id !== alunoId) return aluno;
-      const notaAtual = aluno.avaliacoes[capacidadeId];
-      return {
-        ...aluno,
-        avaliacoes: {
-          ...aluno.avaliacoes,
-          [capacidadeId]: notaAtual === nivel ? undefined : nivel
-        }
-      };
-    }));
-  };
-
-  const handleMudarObservacao = (alunoId: string, capacidadeId: string, texto: string) => {
-    setAlunos(prev => prev.map(aluno => {
-      if (aluno.id !== alunoId) return aluno;
-      return {
-        ...aluno,
-        observacoes: {
-          ...aluno.observacoes,
-          [capacidadeId]: texto
-        }
-      };
-    }));
+    try {
+      const alunoRef = doc(db, 'alunos', alunoId);
+      await updateDoc(alunoRef, {
+        observacoes: novasObservacoes
+      });
+    } catch (error) {
+      console.error("Erro ao salvar observação na nuvem:", error);
+    }
   };
 
   const getAlunosAvaliadosCount = (capId: string) => {
@@ -198,7 +243,7 @@ export default function App() {
                             <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
                           </div>
 
-                          {/* Seleção Rubrica: NSA (Novo), APO, PAR, AUT */}
+                          {/* Seleção Rubrica */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto md:w-[480px]">
                             {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
                               const configCores = {
@@ -237,10 +282,10 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* NOVO CAMPO DE OBSERVAÇÃO DOS ALUNOS */}
+                        {/* Campo de Observações Técnico */}
                         <div className="w-full">
                           <label className="text-[9px] font-black text-slate-400 block tracking-widest uppercase mb-1">
-                            Observações e Histórico Técnica do Aluno
+                            Observações e Histórico Técnico do Aluno
                           </label>
                           <textarea
                             value={textoObs}
@@ -262,7 +307,7 @@ export default function App() {
                   onClick={() => setCapSelecionada(null)}
                   className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
                 >
-                  Salvar Dados da Turma
+                  Fechar Janela
                 </button>
               </div>
 
