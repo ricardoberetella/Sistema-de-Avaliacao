@@ -1,4 +1,5 @@
-import { CapacidadeTecnica } from './types';
+// src/utils.ts
+import { CapacidadeTecnica, NivelDesempenho } from './types';
 
 export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
   // --- FUSI: FUNDAMENTOS DA USINAGEM ---
@@ -14,7 +15,7 @@ export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
   { id: 'fusi_cap10', ucId: 'FUSI', codigo: 'CAP. 10', descricao: 'Controlar a qualidade das peças usinadas em tornos e fresadoras convencionais, visualmente e por meio de instrumentos de acordo com as especificações técnicas.' },
   { id: 'fusi_cap11', ucId: 'FUSI', codigo: 'CAP. 11', descricao: 'Aplicar os procedimentos de refrigeração nos processos de torneamento e fresagem convencional.' },
 
-  // --- CRD: CONTROLE DIMENSIONAL ---
+  // --- CRD: CONTROLE DIMENSIONAL (METROLOGIA) ---
   { id: 'crd_cap1', ucId: 'CRD', codigo: 'CAP. 01', descricao: 'Identificar a importância da metrologia na indústria metalmecânica.' },
   { id: 'crd_cap2', ucId: 'CRD', codigo: 'CAP. 02', descricao: 'Medir peças com escala.' },
   { id: 'crd_cap3', ucId: 'CRD', codigo: 'CAP. 03', descricao: 'Medir peças com trena.' },
@@ -31,8 +32,9 @@ export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
   { id: 'lidt_cap4', ucId: 'LIDT', codigo: 'CAP. 04', descricao: 'Interpretar tolerância dimensional, geométrica e de acabamento superficial em desenho técnico.' }
 ];
 
-export const getDescricaoRubrica = (capId: string, nivel: string): string => {
-  const descricoes: Record<string, string> = {
+// Retorna a descrição detalhada do critério com tipagem estrita para o NivelDesempenho
+export const getDescricaoRubrica = (capId: string, nivel: NivelDesempenho): string => {
+  const descricoes: Record<NivelDesempenho, string> = {
     NSA: 'Não Satisfez os Critérios mínimos exigidos para a validação desta capacidade técnica.',
     APO: 'Demonstra execução ou interpretação com dependência direta e contínua do instrutor.',
     PAR: 'Conclui a análise ou processo com autonomia parcial, cometendo erros pequenos em detalhes complexos.',
