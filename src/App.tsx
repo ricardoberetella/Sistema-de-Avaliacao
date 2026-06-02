@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './types';
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
@@ -82,7 +83,7 @@ export default function App() {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
-    const notaAtual = alunoAlvo.avaliacoes?.[capacidadeId];
+    const notaAtual = alunoAlvo.avaliacoes?.[capacityId];
     const novaNota = notaAtual === nivel ? null : nivel;
 
     const novasAvaliacoes = { ...(alunoAlvo.avaliacoes || {}) };
@@ -103,13 +104,13 @@ export default function App() {
     }
   };
 
-  const handleMudarObservacao = async (alunoId: string, capacidadId: string, texto: string) => {
+  const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
     const novasObservacoes = {
       ...(alunoAlvo.observacoes || {}),
-      [capacidadId]: texto
+      [capacidadeId]: texto
     };
 
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
@@ -123,7 +124,6 @@ export default function App() {
     }
   };
 
-  // Retorna o objeto com a contagem exata das 4 rubricas para uma capacidade específica
   const getContagemRubricas = (capId: string) => {
     const contagem = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     alunosDaTurma.forEach(a => {
@@ -135,7 +135,6 @@ export default function App() {
     return contagem;
   };
 
-  // Consolidação de estatísticas da UC para a tela de gráficos
   const totalGeralRubricas = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
   capacidadesFiltradas.forEach(cap => {
     const c = getContagemRubricas(cap.id);
@@ -146,12 +145,9 @@ export default function App() {
   });
   const somaTotalNotas = totalGeralRubricas.NSA + totalGeralRubricas.APO + totalGeralRubricas.PAR + totalGeralRubricas.AUT;
 
-  // Função robusta para exportação de Relatório PDF Padrão SENAI
   const exportarRelatorioPDF = () => {
     const elemento = document.getElementById('relatorio-pdf-container');
     if (!elemento) return;
-
-    const nomeDaUc = ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : ucAtiva === 'LIDT' ? 'Leitura de Desenho Técnico' : 'Ciência dos Materiais';
 
     const opt = {
       margin: 10,
@@ -161,7 +157,6 @@ export default function App() {
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
-    // Exibe temporariamente a div oculta do PDF antes do print
     elemento.classList.remove('hidden');
     html2pdf().set(opt).from(elemento).save().then(() => {
       elemento.classList.add('hidden');
@@ -220,7 +215,6 @@ export default function App() {
               {ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : ucAtiva === 'LIDT' ? 'Leitura de Desenho Técnico' : 'Ciência dos Materiais'}
             </span>
             
-            {/* Botões Analíticos de Gráficos e Exportação */}
             <button
               onClick={() => setVerGraficos(true)}
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] rounded-lg tracking-wider uppercase flex items-center gap-1 shadow-sm transition-colors"
@@ -264,7 +258,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* --- MODAL DIÁRIO DE CLASSE (LANÇAMENTO DE NOTAS E EXCLUSÃO) --- */}
         {capSelecionada && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
@@ -380,7 +373,6 @@ export default function App() {
           </div>
         )}
 
-        {/* --- MODAL DE GRÁFICOS E ESTATÍSTICAS DA TURMA --- */}
         {verGraficos && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-2xl rounded-[24px] shadow-2xl p-6 border border-slate-100 relative">
@@ -432,7 +424,6 @@ export default function App() {
           </div>
         )}
 
-        {/* --- ESTRUTURA OCULTA IMPRESSA NO RELATÓRIO PDF --- */}
         <div id="relatorio-pdf-container" className="hidden p-8 bg-white text-slate-900 font-sans w-[297mm]">
           <div className="border-4 border-[#004fa3] p-6 rounded-xl space-y-6">
             <div className="flex justify-between items-center border-b-4 border-red-600 pb-4">
