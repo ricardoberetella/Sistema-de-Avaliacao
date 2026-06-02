@@ -3,8 +3,9 @@ import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './type
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
 
-// CONEXÃO COM O SUPABASE
-import { supabase } from './supabase';
+// CONEXÃO COM O SEU FIRESTORE DO GOOGLE
+import { db } from './firebase';
+import { collection, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
@@ -18,81 +19,54 @@ export default function App() {
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  // BUSCA E ATUALIZAÇÃO EM TEMPO REAL
+  // ESCUTA O BANCO DE DADOS EM TEMPO REAL
   useEffect(() => {
-    const buscarAlunos = async () => {
-      const { data, error } = await supabase
-        .from('alunos')
-        .select('*');
-      
-      if (error) {
-        console.error("Erro ao buscar alunos no Supabase:", error);
-      } else if (data) {
-        const listaFormatada = data.map((a: any) => ({
-          id: String(a.id),
-          nome: a.nome,
-          turmaId: a.turma_id || a.turmaId || turmaAtiva,
-          avaliacoes: a.avaliacoes || {},
-          observacoes: a.observacoes || {}
-        }));
-        setAlunos(listaFormatada);
-      }
-    };
+    const colRef = collection(db, 'alunos');
+    
+    // O onSnapshot atualiza a tela do professor na mesma hora se houver mudanças
+    const unsubscribe = onSnapshot(colRef, (snapshot) => {
+      const listaAlunos: Aluno[] = [];
+      snapshot.forEach((docSnap) => {
+        const dados = docSnap.data();
+        listaAlunos.push({
+          id: docSnap.id,
+          nome: dados.nome || '',
+          turmaId: dados.turmaId || 'MA',
+          avaliacoes: dados.avaliacoes || {},
+          observacoes: dados.observacoes || {}
+        });
+      });
+      setAlunos(listaAlunos);
+    }, (error) => {
+      console.error("Erro ao escutar Firestore:", error);
+    });
 
-    buscarAlunos();
+    return () => unsubscribe();
+  }, []);
 
-    // Monitora alterações nas linhas da tabela 'alunos'
-    const canalAlunos = supabase
-      .channel('mudancas-alunos')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alunos' }, () => {
-        buscarAlunos();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(canalAlunos);
-    };
-  }, [turmaAtiva]);
-
-  // INSERIR ALUNO NO BANCO
+  // SALVA O NOVO ALUNO NO BANCO
   const handleAddAluno = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoNome.trim()) return;
 
+    const idGerado = crypto.randomUUID();
     const nomeFormatado = novoNome.trim().toUpperCase();
 
     try {
-      // Tenta gravar inserindo tanto turma_id quanto turmaId para evitar rejeição da tabela
-      const { error } = await supabase
-        .from('alunos')
-        .insert([
-          {
-            nome: nomeFormatado,
-            turma_id: turmaAtiva,
-            turmaId: turmaAtiva,
-            avaliacoes: {},
-            observacoes: {}
-          }
-        ]);
-
-      if (error) throw error;
-      setNovoNome('');
-    } catch (error) {
-      console.error("Erro na gravação do aluno:", error);
-      
-      // Feedback visual temporário na tela caso o banco falhe
-      setAlunos(prev => [...prev, {
-        id: crypto.randomUUID(),
+      // Cria o documento na coleção 'alunos' com o ID gerado
+      await setDoc(doc(db, 'alunos', idGerado), {
         nome: nomeFormatado,
         turmaId: turmaAtiva,
         avaliacoes: {},
         observacoes: {}
-      }]);
+      });
       setNovoNome('');
+    } catch (error) {
+      console.error("Erro ao adicionar aluno no Firebase:", error);
     }
   };
 
-  // ATUALIZAR RÚBRICA DA SÉRIE METÓDICA
+  // GRAVA A RÚBRICA DA SÉRIE METÓDICA NO FIREBASE
   const handleDefinirRubrica = async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
@@ -107,22 +81,16 @@ export default function App() {
       novasAvaliacoes[capacidadeId] = nivel;
     }
 
-    // Atualiza a interface imediatamente (Otimista)
-    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, avaliacoes: novasAvaliacoes } : a));
-
     try {
-      const { error } = await supabase
-        .from('alunos')
-        .update({ avaliacoes: novasAvaliacoes })
-        .eq('id', alunoId);
-
-      if (error) throw error;
+      await updateDoc(doc(db, 'alunos', alunoId), {
+        avaliacoes: novasAvaliacoes
+      });
     } catch (error) {
-      console.error("Erro ao salvar rubrica no Supabase:", error);
+      console.error("Erro ao atualizar rubrica:", error);
     }
   };
 
-  // ATUALIZAR OBSERVAÇÃO TÉCNICA
+  // GRAVA A OBSERVAÇÃO/HISTÓRICO TÉCNICO NO FIREBASE
   const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
@@ -132,18 +100,12 @@ export default function App() {
       [capacidadeId]: texto
     };
 
-    // Atualiza a interface imediatamente
-    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
-
     try {
-      const { error } = await supabase
-        .from('alunos')
-        .update({ observacoes: novasObservacoes })
-        .eq('id', alunoId);
-
-      if (error) throw error;
+      await updateDoc(doc(db, 'alunos', alunoId), {
+        observacoes: novasObservacoes
+      });
     } catch (error) {
-      console.error("Erro ao salvar observação no Supabase:", error);
+      console.error("Erro ao salvar observação:", error);
     }
   };
 
@@ -158,7 +120,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      {/* HEADER SENAI */}
+      {/* HEADER INSTITUCIONAL */}
       <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic">
@@ -236,7 +198,7 @@ export default function App() {
           </form>
         </div>
 
-        {/* CARDS DE CAPACIDADE */}
+        {/* LISTAGEM DOS CARDS DE CAPACIDADE */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {capacidadesFiltradas.map((cap) => (
             <CapacidadeCard
@@ -250,7 +212,7 @@ export default function App() {
           ))}
         </div>
 
-        {/* MODAL COM CAMPO DE OBSERVAÇÃO INDIVIDUAL */}
+        {/* DIÁRIO DE CLASSE / MAPA DE NOTAS */}
         {capSelecionada && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
@@ -286,7 +248,6 @@ export default function App() {
                             <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
                           </div>
 
-                          {/* Seleção Rubrica */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto md:w-[480px]">
                             {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
                               const configCores = {
@@ -325,7 +286,6 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Campo de Observações Técnicas */}
                         <div className="w-full">
                           <label className="text-[9px] font-black text-slate-400 block tracking-widest uppercase mb-1">
                             Observações e Histórico Técnico do Aluno
