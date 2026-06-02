@@ -83,7 +83,8 @@ export default function App() {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
-    const notaAtual = alunoAlvo.avaliacoes?.[capacityId];
+    // CORRIGIDO: de capacityId para capacidadeId conforme definido nos parâmetros da função
+    const notaAtual = alunoAlvo.avaliacoes?.[capacidadeId];
     const novaNota = notaAtual === nivel ? null : nivel;
 
     const novasAvaliacoes = { ...(alunoAlvo.avaliacoes || {}) };
