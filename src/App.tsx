@@ -4,7 +4,7 @@ import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
 
 import { db } from './firebase';
-import { collection, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export default function App() {
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
@@ -60,6 +60,17 @@ export default function App() {
       });
     } catch (error) {
       console.error("Erro ao adicionar aluno:", error);
+    }
+  };
+
+  const handleExcluirAluno = async (alunoId: string, nomeAluno: string) => {
+    const confirmar = window.confirm(`Deseja realmente excluir o aluno ${nomeAluno} do sistema? Esta ação removerá todas as notas dele.`);
+    if (!confirmar) return;
+
+    try {
+      await deleteDoc(doc(db, 'alunos', alunoId));
+    } catch (error) {
+      console.error("Erro ao excluir aluno:", error);
     }
   };
 
@@ -148,6 +159,12 @@ export default function App() {
               >
                 LIDT (Desenho Técnico)
               </button>
+              <button 
+                onClick={() => { setUcAtiva('CMAT'); setCapSelecionada(null); }}
+                className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === 'CMAT' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+              >
+                CMAT (Matérias)
+              </button>
             </div>
           </div>
         </div>
@@ -174,7 +191,7 @@ export default function App() {
               TURMA {turmaAtiva}
             </h2>
             <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
-              {ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : 'Leitura de Desenho Técnico'}
+              {ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : ucAtiva === 'LIDT' ? 'Leitura de Desenho Técnico' : 'Ciência dos Materiais'}
             </span>
           </div>
 
@@ -204,7 +221,7 @@ export default function App() {
               alunosAutonomos={getAlunosAutonomosCount(cap.id)}
               totalAlunos={alunosDaTurma.length}
               onClick={() => setCapSelecionada(cap)}
-          />
+            />
           ))}
         </div>
 
@@ -238,9 +255,20 @@ export default function App() {
                       <div key={aluno.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
                         
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
-                          <div>
-                            <span className="text-[10px] font-black text-slate-400 block tracking-wider">ESTUDANTE</span>
-                            <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
+                          <div className="flex items-center gap-4">
+                            <div>
+                              <span className="text-[10px] font-black text-slate-400 block tracking-wider">ESTUDANTE</span>
+                              <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleExcluirAluno(aluno.id, aluno.nome)}
+                              className="mt-4 sm:mt-0 p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors group flex items-center justify-center gap-1"
+                              title="Excluir Aluno"
+                            >
+                              <span className="text-[14px]">🗑️</span>
+                              <span className="text-[9px] font-black tracking-tight uppercase pr-1 hidden group-hover:inline">Excluir</span>
+                            </button>
                           </div>
 
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto md:w-[480px]">
