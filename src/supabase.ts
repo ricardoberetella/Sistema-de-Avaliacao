@@ -1,7 +1,7 @@
 // src/supabase.ts
 import { createClient } from '@supabase/supabase-client';
 
-// O Vite e a Netlify vão ler essas variáveis automaticamente das configurações que você já tem prontas
+// Puxa as variáveis de ambiente configuradas na Netlify
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
