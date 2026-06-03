@@ -7,7 +7,7 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// Importação ajustada e compatível com o empacotador moderno do Vite
+// Importação ajustada e estável para o empacotador do Vite
 import html2pdf from 'html2pdf.js/dist/html2pdf.min.js';
 
 export default function App() {
@@ -143,6 +143,7 @@ export default function App() {
     totalGeralRubricas.PAR += c.PAR;
     totalGeralRubricas.AUT += c.AUT;
   });
+  const somaTotalNotas = totalGeralRubricas.NSA + totalGeralRubricas.APO + totalGeralRubricas.PAR + totalGeralRubricas.AUT;
 
   const exportarRelatorioPDF = () => {
     const elemento = document.getElementById('relatorio-pdf-container');
@@ -158,7 +159,7 @@ export default function App() {
 
     elemento.classList.remove('hidden');
     
-    // Execução segura da biblioteca de PDF
+    // Execução segura através do método de distribuição do html2pdf
     const worker = html2pdf();
     worker.set(opt).from(elemento).save().then(() => {
       elemento.classList.add('hidden');
@@ -179,7 +180,7 @@ export default function App() {
             </h1>
             
             <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 justify-center sm:justify-start">
-              {(([ 'FUSI', 'CRD', 'LIDT', 'CMAT' ] as UCId[])).map((sigla) => (
+              {(['FUSI', 'CRD', 'LIDT', 'CMAT'] as UCId[]).map((sigla) => (
                 <button 
                   key={sigla}
                   onClick={() => { setUcAtiva(sigla); setCapSelecionada(null); }}
