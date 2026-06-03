@@ -39,7 +39,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!autenticado) return; // Só ativa o listener do Firestore se estiver logado
+    if (!autenticado) return;
 
     const colRef = collection(db, 'alunos');
     
@@ -123,7 +123,7 @@ export default function App() {
     }
   };
 
-  const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorStr: string) => {
+  const handleMudarNotaNumerica = async (alunoId: string, capacidadId: string, valorStr: string) => {
     if (valorStr !== '') {
       const num = parseInt(valorStr, 10);
       if (isNaN(num) || num < 0 || num > 100) return;
@@ -131,7 +131,7 @@ export default function App() {
 
     const novasNotasNumericas = {
       ...((alunos.find(a => a.id === alunoId) as any)?.notasNumericas || {}),
-      [capacidadeId]: valorStr
+      [capacidadId]: valorStr
     };
 
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
@@ -262,28 +262,26 @@ export default function App() {
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
       
       <style>{`
+        /* Corrigido para não ocupar espaço ou gerar folha em branco na visualização de tela */
         #relatorio-pdf-container {
-          position: absolute;
-          left: -9999px;
-          top: -9999px;
-          opacity: 0;
-          pointer-events: none;
+          display: none;
         }
 
         @media print {
-          body * {
-            visibility: hidden;
+          .conteudo-tela {
+            display: none !important;
           }
-          #relatorio-pdf-container, #relatorio-pdf-container * {
-            visibility: visible;
+          body {
+            background-color: #ffffff !important;
           }
           #relatorio-pdf-container {
             display: block !important;
-            opacity: 1 !important;
-            position: absolute !important;
+            position: relative !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
           }
           
           .rubrica-azul-impressao {
@@ -308,9 +306,9 @@ export default function App() {
               SENAI
             </div>
             <div className="text-center sm:text-left">
-              {/* Ajustado: Título principal alterado conforme solicitação */}
+              {/* Alterado aqui: "Mecânico de Usinagem" -> "Mecânico de Usinagem Convencional" */}
               <h1 className="text-lg md:text-xl font-black uppercase tracking-wider">
-                Sistema de Avaliação — Mecânico de Usinagem
+                Sistema de Avaliação — Mecânico de Usinagem Convencional
               </h1>
               
               <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 justify-center sm:justify-start">
