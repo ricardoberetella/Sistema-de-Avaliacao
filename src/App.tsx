@@ -105,13 +105,13 @@ export default function App() {
     }
   };
 
-  const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
+  const handleMudarObservacao = async (alunoId: string, capacidadId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
     const novasObservacoes = {
       ...(alunoAlvo.observacoes || {}),
-      [capacidadeId]: texto
+      [capacidadId]: texto
     };
 
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
@@ -126,7 +126,7 @@ export default function App() {
   };
 
   const getContagemRubricas = (capId: string) => {
-    const contagem = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
+    const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     alunosDaTurma.forEach(a => {
       const nota = a.avaliacoes?.[capId];
       if (nota === 'NSA' || nota === 'APO' || nota === 'PAR' || nota === 'AUT') {
@@ -331,7 +331,7 @@ export default function App() {
                           <textarea
                             value={textoObs}
                             onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                            placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..."
+                            placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
                             className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400"
                           />
                           {nivelAtual && (
