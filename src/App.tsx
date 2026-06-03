@@ -32,7 +32,9 @@ export default function App() {
           nome: dados.nome || '',
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
-          observacoes: dados.observacoes || {}
+          observacoes: dados.observacoes || {},
+          // Mapeamento seguro para caso existam notas numéricas salvas antigas
+          notasNumericas: dados.notasNumericas || {}
         });
       });
       listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -58,7 +60,8 @@ export default function App() {
         nome: nomeFormatado,
         turmaId: turmaAtiva,
         avaliacoes: {},
-        observacoes: {}
+        observacoes: {},
+        notasNumericas: {}
       });
     } catch (error) {
       console.error("Erro ao adicionar aluno:", error);
@@ -101,6 +104,29 @@ export default function App() {
     }
   };
 
+  const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorStr: string) => {
+    // Permite apenas números inteiros entre 0 e 100 ou string vazia
+    if (valorStr !== '') {
+      const num = parseInt(valorStr, 10);
+      if (isNaN(num) || num < 0 || num > 100) return;
+    }
+
+    const novasNotasNumericas = {
+      ...((alunos.find(a => a.id === alunoId) as any)?.notasNumericas || {}),
+      [capacidadeId]: valorStr
+    };
+
+    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
+
+    try {
+      await updateDoc(doc(db, 'alunos', alunoId), {
+        notasNumericas: novasNotasNumericas
+      });
+    } catch (error) {
+      console.error("Erro ao salvar nota numérica:", error);
+    }
+  };
+
   const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
@@ -132,7 +158,6 @@ export default function App() {
     return contagem;
   };
 
-  // Consolidação de estatísticas da UC atual
   const totalGeralRubricas = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
   capacidadesFiltradas.forEach(cap => {
     const c = getContagemRubricas(cap.id);
@@ -160,7 +185,6 @@ export default function App() {
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
       
       <style>{`
-        /* Evita que elementos escondidos fiquem invisíveis para o motor de impressão */
         #relatorio-pdf-container {
           position: absolute;
           left: -9999px;
@@ -185,7 +209,6 @@ export default function App() {
             width: 100% !important;
           }
           
-          /* Altera a cor azul do critério PAR para preto apenas na impressão */
           .rubrica-azul-impressao {
             color: #000000 !important;
           }
@@ -319,11 +342,13 @@ export default function App() {
                   ) : (
                     alunosDaTurma.map((aluno) => {
                       const nivelAtual = aluno.avaliacoes ? aluno.avaliacoes[capSelecionada.id] : undefined;
+                      const notaNum = (aluno as any).notasNumericas?.[capSelecionada.id] || '';
                       const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
+                      
                       return (
                         <div key={aluno.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
                           
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-4">
                               <div>
                                 <span className="text-[10px] font-black text-slate-400 block tracking-wider">ESTUDANTE</span>
@@ -338,23 +363,40 @@ export default function App() {
                               </button>
                             </div>
 
-                            <div className="flex flex-wrap gap-1.5">
-                              {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
-                                <button
-                                  key={nivel}
-                                  onClick={() => handleDefinirRubrica(aluno.id, capSelecionada.id, nivel)}
-                                  className={`px-3 py-2 rounded-xl text-xs font-black tracking-tight transition-all border ${
-                                    nivelAtual === nivel
-                                      ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600'
-                                        : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500'
-                                        : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600'
-                                        : 'bg-emerald-600 text-white border-emerald-600'
-                                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'
-                                  }`}
-                                >
-                                  {nivel}
-                                </button>
-                              ))}
+                            {/* CONTROLES DE NOTA (RUBRICA + NOVO CAMPO NUMÉRICO ABAIXO) */}
+                            <div className="flex flex-col items-end gap-3 shrink-0">
+                              <div className="flex flex-wrap gap-1.5">
+                                {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
+                                  <button
+                                    key={nivel}
+                                    onClick={() => handleDefinirRubrica(aluno.id, capSelecionada.id, nivel)}
+                                    className={`px-3 py-2 rounded-xl text-xs font-black tracking-tight transition-all border ${
+                                      nivelAtual === nivel
+                                        ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600'
+                                          : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500'
+                                          : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600'
+                                          : 'bg-emerald-600 text-white border-emerald-600'
+                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'
+                                    }`}
+                                  >
+                                    {nivel}
+                                  </button>
+                                ))}
+                              </div>
+                              
+                              {/* NOVO CAMPO PARA NOTA DE 0 A 100 INSERIDO ABAIXO DA RUBRICA */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={notaNum}
+                                  onChange={(e) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value)}
+                                  placeholder="Ex: 85"
+                                  className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner"
+                                />
+                              </div>
                             </div>
                           </div>
 
@@ -394,7 +436,6 @@ export default function App() {
             </div>
           )}
 
-          {/* PAINEL DE ESTATÍSTICAS REESTRUTURADO COM CORES, PORCENTAGENS E BARRAS DE PROGRESSO */}
           {verGraficos && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
               <div className="bg-white w-full max-w-xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100">
@@ -539,6 +580,10 @@ export default function App() {
                     </td>
                     {capacidadesFiltradas.map(c => {
                       const v = aluno.avaliacoes?.[c.id] || '-';
+                      const notaNumSalva = (aluno as any).notasNumericas?.[c.id];
+                      
+                      // Se houver uma nota numérica, exibe ao lado ou abaixo da rubrica no PDF
+                      const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
                       
                       const isPar = v === 'PAR';
                       const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
@@ -557,7 +602,7 @@ export default function App() {
                             backgroundColor: corFundo
                           }}
                         >
-                          {v}
+                          {exibicaoCelula}
                         </td>
                       );
                     })}
