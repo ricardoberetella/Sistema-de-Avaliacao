@@ -7,7 +7,7 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// Ignora a falta de tipagem estrita para o build de produção da Vercel
+// Ignora estritamente qualquer falta de tipagem para o build de produção da Vercel passar direto
 // @ts-ignore
 import html2pdf from 'html2pdf.js/dist/html2pdf.min.js';
 
@@ -159,7 +159,7 @@ export default function App() {
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
-    // Executa o download direto do elemento renderizado fora da tela
+    // Gera o PDF diretamente a partir do elemento estruturado com estilo inline estável
     html2pdf().set(opt).from(elemento).save();
   };
 
@@ -392,29 +392,53 @@ export default function App() {
           </div>
         )}
 
-        {/* ESTRATÉGIA CORRIGIDA: Fora da tela física do monitor, mas 100% visível para o motor do html2pdf renderizar as tabelas e dados */}
-        <div id="relatorio-pdf-container" className="absolute left-[-9999px] top-[-9999px] bg-white">
-          <div style={{ padding: '40px', backgroundColor: '#ffffff', color: '#1e293b', width: '297mm', fontFamily: 'Arial, sans-serif' }}>
-            <div style={{ border: '4px solid #004fa3', padding: '24px' }}>
+        {/* CONTAINER REESTRUTURADO: Escondido via opacidade e sem display:none, garantindo leitura total pelo html2pdf */}
+        <div 
+          id="relatorio-pdf-container" 
+          style={{ 
+            position: 'absolute', 
+            left: '-9999px', 
+            top: '-9999px', 
+            width: '297mm', 
+            backgroundColor: '#ffffff',
+            opacity: 0
+          }}
+        >
+          <div style={{ padding: '30px', color: '#1e293b', fontFamily: 'Arial, sans-serif' }}>
+            <div style={{ border: '3px solid #004fa3', padding: '20px', backgroundColor: '#ffffff' }}>
               
-              <div style={{ display: 'flex', justifyContent: 'between', items: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '16px', marginBottom: '24px' }}>
-                <div style={{ flex: 1 }}>
-                  <span style={{ backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', padding: '4px 16px', fontStyle: 'italic', fontSize: '20px' }}>SENAI</span>
-                  <h2 style={{ fontSize: '20px', fontWeight: '900', textTransform: 'uppercase', color: '#004fa3', marginTop: '12px', marginBottom: '4px' }}>Pauta de Avaliação por Capacidades Sociais e Técnicas</h2>
-                  <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Habilitação Profissional: Mecânico de Usinagem Convencional</p>
-                </div>
-                <div style={{ textAlign: 'right', minWidth: '150px' }}>
-                  <p style={{ fontSize: '16px', fontWeight: '900', color: '#334155', margin: '0 0 4px 0' }}>TURMA: <span style={{ color: '#dc2626' }}>{turmaAtiva}</span></p>
-                  <p style={{ fontSize: '12px', fontWeight: '900', color: '#64748b', margin: 0 }}>UC: {ucAtiva}</p>
-                </div>
-              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ verticalAlign: 'top' }}>
+                      <div style={{ backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', display: 'inline-block', padding: '6px 16px', fontSize: '18px', fontStyle: 'italic', letterSpacing: '-1px' }}>
+                        SENAI
+                      </div>
+                      <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', color: '#004fa3', margin: '10px 0 4px 0' }}>
+                        Pauta de Avaliação por Capacidades Sociais e Técnicas
+                      </h2>
+                      <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>
+                        Habilitação Profissional: Mecânico de Usinagem Convencional
+                      </p>
+                    </td>
+                    <td style={{ textAlign: 'right', verticalAlign: 'top', width: '150px' }}>
+                      <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#334155', margin: '0 0 4px 0' }}>
+                        TURMA: <span style={{ color: '#dc2626' }}>{turmaAtiva}</span>
+                      </p>
+                      <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', margin: 0 }}>
+                        UC: {ucAtiva}
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f1f5f9', color: '#334155', fontWeight: '900', textTransform: 'uppercase' }}>
-                    <th style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'left', width: '25%' }}>Nome do Aluno</th>
+                  <tr style={{ backgroundColor: '#f1f5f9', color: '#334155', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    <th style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'left', width: '25%' }}>Nome do Aluno</th>
                     {capacidadesFiltradas.map(c => (
-                      <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'center' }}>
+                      <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>
                         {c.codigo}
                       </th>
                     ))}
@@ -422,19 +446,29 @@ export default function App() {
                 </thead>
                 <tbody>
                   {alunosDaTurma.map(aluno => (
-                    <tr key={aluno.id} style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '8px', color: '#0f172a' }}>{aluno.nome}</td>
+                    <tr key={aluno.id} style={{ textTransform: 'uppercase' }}>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>
+                        {aluno.nome}
+                      </td>
                       {capacidadesFiltradas.map(c => {
                         const v = aluno.avaliacoes?.[c.id] || '-';
+                        
+                        // Define cores explícitas em Hexadecimal estável para o motor do PDF
+                        const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : v === 'PAR' ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
+                        const corFundo = v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : '#ffffff';
+
                         return (
-                          <td key={c.id} style={{ 
-                            border: '1px solid #cbd5e1', 
-                            padding: '8px', 
-                            textAlign: 'center', 
-                            fontWeight: '900',
-                            color: v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : v === 'PAR' ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#cbd5e1',
-                            backgroundColor: v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : 'transparent'
-                          }}>
+                          <td 
+                            key={c.id} 
+                            style={{ 
+                              border: '1px solid #cbd5e1', 
+                              padding: '7px 8px', 
+                              textAlign: 'center', 
+                              fontWeight: 'bold',
+                              color: corTexto,
+                              backgroundColor: corFundo
+                            }}
+                          >
                             {v}
                           </td>
                         );
