@@ -146,16 +146,8 @@ export default function App() {
   });
 
   const exportarRelatorioPDF = () => {
-    const elementoOriginal = document.getElementById('relatorio-pdf-container');
-    if (!elementoOriginal) return;
-
-    // Criamos um clone em memória para isolar completamente a renderização do PDF da tela do usuário
-    const cloneElemento = elementoOriginal.cloneNode(true) as HTMLElement;
-    cloneElemento.classList.remove('hidden');
-    cloneElemento.style.position = 'absolute';
-    cloneElemento.style.left = '-9999px';
-    cloneElemento.style.top = '-9999px';
-    document.body.appendChild(cloneElemento);
+    const elemento = document.getElementById('relatorio-pdf-container');
+    if (!elemento) return;
 
     const nomeArquivo = `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}.pdf`;
 
@@ -163,22 +155,12 @@ export default function App() {
       margin: 10,
       filename: nomeArquivo,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
-    // Executa o download nativo de forma direta e limpa o clone imediatamente depois
-    html2pdf()
-      .set(opt)
-      .from(cloneElemento)
-      .save()
-      .then(() => {
-        document.body.removeChild(cloneElemento);
-      })
-      .catch((err: any) => {
-        console.error("Erro ao baixar PDF:", err);
-        document.body.removeChild(cloneElemento);
-      });
+    // Executa o download direto do elemento renderizado fora da tela
+    html2pdf().set(opt).from(elemento).save();
   };
 
   return (
@@ -410,8 +392,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Container que fica permanentemente oculto e seguro na aplicação */}
-        <div id="relatorio-pdf-container" className="hidden">
+        {/* ESTRATÉGIA CORRIGIDA: Fora da tela física do monitor, mas 100% visível para o motor do html2pdf renderizar as tabelas e dados */}
+        <div id="relatorio-pdf-container" className="absolute left-[-9999px] top-[-9999px] bg-white">
           <div style={{ padding: '40px', backgroundColor: '#ffffff', color: '#1e293b', width: '297mm', fontFamily: 'Arial, sans-serif' }}>
             <div style={{ border: '4px solid #004fa3', padding: '24px' }}>
               
