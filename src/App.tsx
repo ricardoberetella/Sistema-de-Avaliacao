@@ -7,7 +7,7 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// Importação ajustada e estável para o empacotador do Vite
+// Importação estável para o empacotador do Vite
 import html2pdf from 'html2pdf.js/dist/html2pdf.min.js';
 
 export default function App() {
@@ -143,7 +143,6 @@ export default function App() {
     totalGeralRubricas.PAR += c.PAR;
     totalGeralRubricas.AUT += c.AUT;
   });
-  const somaTotalNotas = totalGeralRubricas.NSA + totalGeralRubricas.APO + totalGeralRubricas.PAR + totalGeralRubricas.AUT;
 
   const exportarRelatorioPDF = () => {
     const elemento = document.getElementById('relatorio-pdf-container');
@@ -159,7 +158,6 @@ export default function App() {
 
     elemento.classList.remove('hidden');
     
-    // Execução segura através do método de distribuição do html2pdf
     const worker = html2pdf();
     worker.set(opt).from(elemento).save().then(() => {
       elemento.classList.add('hidden');
@@ -384,7 +382,7 @@ export default function App() {
                   </div>
                   <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
                     <span className="block text-xs font-black text-emerald-500 uppercase tracking-wider">AUT</span>
-                    <span className="text-3xl font-black text-emerald-700">{totalGeralRubricas.AUT}</span>
+                    <span className="text-3xl font-black text-emerald-500">{totalGeralRubricas.AUT}</span>
                   </div>
                 </div>
               </div>
@@ -395,7 +393,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Container Oculto do Relatório PDF Estruturado */}
+        {/* Container do Relatório PDF */}
         <div id="relatorio-pdf-container" className="hidden p-10 bg-white text-slate-900 w-[297mm]">
           <div className="border-4 border-[#004fa3] p-6">
             <div className="flex justify-between items-center border-b-2 border-slate-300 pb-4 mb-6">
@@ -415,7 +413,7 @@ export default function App() {
                 <tr className="bg-slate-100 text-slate-700 font-black uppercase">
                   <th className="border border-slate-300 p-2 text-left w-1/4">Nome do Aluno</th>
                   {capacidadesFiltradas.map(c => (
-                    <th key={c.id} className="border border-slate-300 p-2 text-center" title={c.descricao}>
+                    <th key={c.id} className="border border-slate-300 p-2 text-center">
                       {c.codigo}
                     </th>
                   ))}
