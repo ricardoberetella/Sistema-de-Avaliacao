@@ -141,7 +141,7 @@ export default function App() {
     totalGeralRubricas.AUT += c.AUT;
   });
 
-  // Utiliza a API de impressão estável do próprio navegador
+  // Dispara a janela estável de impressão do navegador
   const exportarRelatorioPDF = () => {
     const tituloOriginal = document.title;
     document.title = `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}`;
@@ -152,20 +152,18 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
       
-      {/* Estilos CSS Injetados para controlar a impressão de forma nativa e limpa */}
+      {/* Estilos CSS Avançados para impressão nativa do navegador */}
       <style>{`
-        /* Na tela do computador/telemóvel, esconde completamente o container do PDF */
+        /* Oculta o container da pauta na tela normal */
         #relatorio-pdf-container {
           display: none;
         }
 
-        /* Regras acionadas apenas no momento em que window.print() é chamado */
+        /* Regras aplicadas unicamente na geração do documento impresso/PDF */
         @media print {
-          /* Esconde absolutamente tudo o que faz parte do sistema visível */
           body * {
             visibility: hidden;
           }
-          /* Torna apenas o container da pauta visível e força a ocupar o topo da página */
           #relatorio-pdf-container, #relatorio-pdf-container * {
             visibility: visible;
           }
@@ -176,12 +174,16 @@ export default function App() {
             top: 0;
             width: 100%;
           }
-          /* Configurações da folha de impressão para Paisagem */
+          
+          /* FORÇA todas as rubricas azuis (como o PAR) a serem impressas na cor PRETA */
+          .rubrica-azul-impressao {
+            color: #000000 !important;
+          }
+
           @page {
             size: A4 landscape;
             margin: 10mm;
           }
-          /* Garante que o navegador vai imprimir as cores de fundo das células (NSA, APO, PAR, AUT) */
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -353,7 +355,7 @@ export default function App() {
                             <textarea
                               value={textoObs}
                               onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                              placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
+                              placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..."
                               className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400"
                             />
                             {nivelAtual && (
@@ -418,7 +420,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* CONTAINER DO RELATÓRIO: Gerado perfeitamente pelo driver de impressão nativo */}
+      {/* CONTAINER DO RELATÓRIO PREPARADO PARA IMPRESSÃO */}
       <div id="relatorio-pdf-container">
         <div style={{ padding: '20px', color: '#1e293b', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff' }}>
           <div style={{ border: '3px solid #004fa3', padding: '20px', backgroundColor: '#ffffff' }}>
@@ -469,12 +471,15 @@ export default function App() {
                     {capacidadesFiltradas.map(c => {
                       const v = aluno.avaliacoes?.[c.id] || '-';
                       
-                      const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : v === 'PAR' ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
+                      // Configura classes e cores dinâmicas para o documento
+                      const isPar = v === 'PAR';
+                      const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
                       const corFundo = v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : '#ffffff';
 
                       return (
                         <td 
                           key={c.id} 
+                          className={isPar ? 'rubrica-azul-impressao' : ''}
                           style={{ 
                             border: '1px solid #cbd5e1', 
                             padding: '7px 8px', 
