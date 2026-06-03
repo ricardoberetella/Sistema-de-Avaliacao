@@ -262,7 +262,6 @@ export default function App() {
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
       
       <style>{`
-        /* Corrigido para não ocupar espaço ou gerar folha em branco na visualização de tela */
         #relatorio-pdf-container {
           display: none;
         }
@@ -301,17 +300,21 @@ export default function App() {
 
       <div className="conteudo-tela">
         <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic">
+          <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
+            <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic shrink-0 hidden sm:block">
               SENAI
             </div>
-            <div className="text-center sm:text-left">
-              {/* Alterado aqui: "Mecânico de Usinagem" -> "Mecânico de Usinagem Convencional" */}
-              <h1 className="text-lg md:text-xl font-black uppercase tracking-wider">
-                Sistema de Avaliação — Mecânico de Usinagem Convencional
+            
+            {/* Bloco do título centralizado de forma responsiva */}
+            <div className="text-center mx-auto lg:mx-0 lg:text-left flex-1">
+              <h1 className="text-lg md:text-xl font-black uppercase tracking-wider block">
+                Sistema de Avaliação
               </h1>
+              <p className="text-blue-200 text-xs md:text-sm font-bold uppercase tracking-wide mt-0.5 block">
+                Mecânico de Usinagem Convencional
+              </p>
               
-              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 justify-center sm:justify-start">
+              <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3 justify-center lg:justify-start">
                 {(['FUSI', 'CRD', 'LIDT', 'CMAT'] as UCId[]).map((sigla) => (
                   <button 
                     key={sigla}
@@ -325,7 +328,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-4 shrink-0 w-full sm:w-auto justify-center sm:justify-end">
             <div className="bg-[#003670] p-1 rounded-xl flex items-center shadow-inner">
               {turmasDisponiveis.map((t) => (
                 <button
