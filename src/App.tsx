@@ -149,18 +149,23 @@ export default function App() {
     const elemento = document.getElementById('relatorio-pdf-container');
     if (!elemento) return;
 
+    const nomeArquivo = `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}.pdf`;
+
     const opt = {
       margin: 10,
-      filename: `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}.pdf`,
+      filename: nomeArquivo,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
+    // Torna o container visível temporariamente para a captura
     elemento.classList.remove('hidden');
     
-    const worker = html2pdf();
-    worker.set(opt).from(elemento).save().then(() => {
+    // Configura e força o download nativo do arquivo em formato binário (blob)
+    html2pdf().set(opt).from(elemento).toPdf().get('pdf').then((pdf: any) => {
+      pdf.save(nomeArquivo);
+      // Oculta o container novamente após o gatilho de download do navegador
       elemento.classList.add('hidden');
     });
   };
@@ -331,7 +336,7 @@ export default function App() {
                           <textarea
                             value={textoObs}
                             onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                            placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
+                            placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..."
                             className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400"
                           />
                           {nivelAtual && (
@@ -394,7 +399,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Container do Relatório PDF */}
+        {/* Container Oculto do Relatório PDF */}
         <div id="relatorio-pdf-container" className="hidden p-10 bg-white text-slate-900 w-[297mm]">
           <div className="border-4 border-[#004fa3] p-6">
             <div className="flex justify-between items-center border-b-2 border-slate-300 pb-4 mb-6">
