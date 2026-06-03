@@ -105,13 +105,13 @@ export default function App() {
     }
   };
 
-  const handleMudarObservacao = async (alunoId: string, capacidadId: string, texto: string) => {
+  const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
     const novasObservacoes = {
       ...(alunoAlvo.observacoes || {}),
-      [capacidadId]: texto
+      [capacidadeId]: texto
     };
 
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
