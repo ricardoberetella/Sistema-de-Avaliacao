@@ -8,6 +8,12 @@ import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export default function App() {
+  // Estados para o Controle de Acesso (Login)
+  const [senhaInput, setSenhaInput] = useState('');
+  const [autenticado, setAutenticado] = useState(false);
+  const [erroLogin, setErroLogin] = useState(false);
+
+  // Estados do Sistema de Avaliação
   const [turmaAtiva, setTurmaAtiva] = useState<TurmaId>('MA');
   const [ucAtiva, setUcAtiva] = useState<UCId>('FUSI');
   const [alunos, setAlunos] = useState<Aluno[]>([]);
@@ -20,7 +26,21 @@ export default function App() {
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
+  // Validação do formulário de login
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (senhaInput === 'ianes662') {
+      setAutenticado(true);
+      setErroLogin(false);
+    } else {
+      setErroLogin(true);
+      setSenhaInput('');
+    }
+  };
+
   useEffect(() => {
+    if (!autenticado) return; // Só ativa o listener do Firestore se estiver logado
+
     const colRef = collection(db, 'alunos');
     
     const unsubscribe = onSnapshot(colRef, (snapshot) => {
@@ -33,7 +53,6 @@ export default function App() {
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
           observacoes: dados.observacoes || {},
-          // Mapeamento seguro para caso existam notas numéricas salvas antigas
           notasNumericas: dados.notasNumericas || {}
         });
       });
@@ -44,7 +63,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [autenticado]);
 
   const handleAddAluno = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +124,6 @@ export default function App() {
   };
 
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorStr: string) => {
-    // Permite apenas números inteiros entre 0 e 100 ou string vazia
     if (valorStr !== '') {
       const num = parseInt(valorStr, 10);
       if (isNaN(num) || num < 0 || num > 100) return;
@@ -181,6 +199,65 @@ export default function App() {
     document.title = tituloOriginal;
   };
 
+  // TELA DE LOGIN (Caso não esteja autenticado)
+  if (!autenticado) {
+    return (
+      <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4 antialiased font-sans">
+        <div className="w-full max-w-md bg-white rounded-[24px] shadow-xl border border-slate-100 overflow-hidden">
+          
+          <div className="bg-[#004fa3] p-8 text-center relative">
+            <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic text-white inline-block mb-4 shadow">
+              SENAI
+            </div>
+            <h2 className="text-white text-md font-black uppercase tracking-wider block">
+              Sistema de Avaliação
+            </h2>
+            <p className="text-blue-200 text-xs mt-1 font-bold">
+              Mecânico de Usinagem Convencional
+            </p>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="p-8 space-y-6">
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block">
+                Chave de Acesso do Instrutor
+              </label>
+              <input
+                type="password"
+                value={senhaInput}
+                onChange={(e) => setSenhaInput(e.target.value)}
+                placeholder="Digite a senha..."
+                className={`w-full h-[48px] px-4 bg-slate-50 border-2 ${
+                  erroLogin ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-blue-500'
+                } text-slate-800 text-center font-black tracking-widest rounded-xl focus:outline-none transition-all shadow-inner text-sm`}
+                autoFocus
+              />
+              {erroLogin && (
+                <p className="text-red-600 text-[10px] font-black uppercase tracking-wide text-center mt-1">
+                  ❌ Senha incorreta! Tente novamente.
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full h-[48px] bg-[#004fa3] hover:bg-[#003670] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow shadow-blue-900/20"
+            >
+              Entrar no Sistema
+            </button>
+          </form>
+
+          <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 text-center">
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+              Área Restrita — Documentação Pedagógica Oficial
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // INTERFACE PRINCIPAL (Acessada após o Login)
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
       
@@ -231,8 +308,9 @@ export default function App() {
               SENAI
             </div>
             <div className="text-center sm:text-left">
+              {/* Ajustado: Título principal alterado conforme solicitação */}
               <h1 className="text-lg md:text-xl font-black uppercase tracking-wider">
-                Mecânico de Usinagem Convencional
+                Sistema de Avaliação — Mecânico de Usinagem
               </h1>
               
               <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 justify-center sm:justify-start">
@@ -249,18 +327,28 @@ export default function App() {
             </div>
           </div>
 
-          <div className="bg-[#003670] p-1 rounded-xl flex items-center shadow-inner shrink-0">
-            {turmasDisponiveis.map((t) => (
-              <button
-                key={t}
-                onClick={() => { setTurmaAtiva(t); setCapSelecionada(null); }}
-                className={`px-4 py-1.5 rounded-lg text-xs font-black tracking-wide transition-all ${
-                  turmaAtiva === t ? 'bg-white text-[#004fa3] shadow' : 'text-blue-200 hover:text-white bg-transparent'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="bg-[#003670] p-1 rounded-xl flex items-center shadow-inner">
+              {turmasDisponiveis.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setTurmaAtiva(t); setCapSelecionada(null); }}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-black tracking-wide transition-all ${
+                    turmaAtiva === t ? 'bg-white text-[#004fa3] shadow' : 'text-blue-200 hover:text-white bg-transparent'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => setAutenticado(false)}
+              className="p-2 bg-red-600 hover:bg-red-700 text-white font-black text-[10px] rounded-xl tracking-wider uppercase transition-colors shadow-sm"
+              title="Sair do Sistema"
+            >
+              Sair 🚪
+            </button>
           </div>
         </header>
 
@@ -363,7 +451,6 @@ export default function App() {
                               </button>
                             </div>
 
-                            {/* CONTROLES DE NOTA (RUBRICA + NOVO CAMPO NUMÉRICO ABAIXO) */}
                             <div className="flex flex-col items-end gap-3 shrink-0">
                               <div className="flex flex-wrap gap-1.5">
                                 {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
@@ -384,7 +471,6 @@ export default function App() {
                                 ))}
                               </div>
                               
-                              {/* NOVO CAMPO PARA NOTA DE 0 A 100 INSERIDO ABAIXO DA RUBRICA */}
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
                                 <input
@@ -449,7 +535,6 @@ export default function App() {
                     Distribuição percentual de critérios na Unidade Curricular ({ucAtiva}):
                   </p>
 
-                  {/* INDICADOR - NSA */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-red-600 tracking-wide">NSA - NÃO SATISFATÓRIO</span>
@@ -465,7 +550,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* INDICADOR - APO */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-amber-500 tracking-wide">APO - COM APOIO</span>
@@ -481,7 +565,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* INDICADOR - PAR */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-blue-600 tracking-wide">PAR - PARCIALMENTE AUTÔNOMO</span>
@@ -497,7 +580,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* INDICADOR - AUT */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-emerald-600 tracking-wide">AUT - AUTÔNOMO</span>
@@ -582,7 +664,6 @@ export default function App() {
                       const v = aluno.avaliacoes?.[c.id] || '-';
                       const notaNumSalva = (aluno as any).notasNumericas?.[c.id];
                       
-                      // Se houver uma nota numérica, exibe ao lado ou abaixo da rubrica no PDF
                       const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
                       
                       const isPar = v === 'PAR';
