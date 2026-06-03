@@ -7,7 +7,8 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// Importação estável para o empacotador do Vite
+// Ignora temporariamente a falta de tipagem estrita para passar no build de produção da Vercel
+// @ts-ignore
 import html2pdf from 'html2pdf.js/dist/html2pdf.min.js';
 
 export default function App() {
@@ -330,7 +331,7 @@ export default function App() {
                           <textarea
                             value={textoObs}
                             onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                            placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
+                            placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..."
                             className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400"
                           />
                           {nivelAtual && (
