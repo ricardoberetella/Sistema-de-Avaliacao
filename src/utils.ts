@@ -3,31 +3,32 @@ import { CapacidadeTecnica, NivelDesempenho } from './types';
 
 export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
   // FUSI - Fundamentos da Usinagem
-  { id: 'fusi_cap1', codigo: 'CAP.01 (FUSI)', ucId: 'FUSI', descricao: 'Planejar o processo de usinagem convencional determinando ferramentas, parâmetros de corte e sequência operacional.' },
-  { id: 'fusi_cap2', codigo: 'CAP.02 (FUSI)', ucId: 'FUSI', descricao: 'Operar torno mecânico convencional realizando operações de faceamento, torneamento cilíndrico, canais e roscas.' },
-  { id: 'fusi_cap3', codigo: 'CAP.03 (FUSI)', ucId: 'FUSI', descricao: 'Operar fresadora mecânica convencional realizando superfícies planas, paralelas, esquadrejamento e canais.' },
-  { id: 'fusi_cap4', codigo: 'CAP.04 (FUSI)', ucId: 'FUSI', descricao: 'Controlar as dimensões das peças usinadas aplicando técnicas de medição e segurança no trabalho.' },
+  { id: 'fusi_ct1', codigo: 'FUSI - CT1', descricao: 'CONSTITUIR GEOMETRIAS EM COMPONENTES MECÂNICOS UTILIZANDO TORNOS CONVENCIONAIS.', ucId: 'FUSI' },
+  { id: 'fusi_ct2', codigo: 'FUSI - CT2', descricao: 'CONSTITUIR GEOMETRIAS EM COMPONENTES MECÂNICOS UTILIZANDO FRESADORAS CONVENCIONAIS.', ucId: 'FUSI' },
+  { id: 'fusi_cs1', codigo: 'FUSI - CS1', descricao: 'DEMONSTRAR ATENÇÃO A DETALHES NAS OPERAÇÕES DE USINAGEM.', ucId: 'FUSI' },
+  { id: 'fusi_cs2', codigo: 'FUSI - CS2', descricao: 'TRABALHAR EM EQUIPE RESPEITANDO AS NORMAS DE SEGURANÇA E MEIO AMBIENTE.', ucId: 'FUSI' },
 
   // CRD - Controle Dimensional
-  { id: 'crd_cap1', codigo: 'CAP.01 (CRD)', ucId: 'CRD', descricao: 'Utilizar paquímetro mecânico e digital com resolução de 0,05mm e 0,02mm na validação de componentes mecânicos.' },
-  { id: 'crd_cap2', codigo: 'CAP.02 (CRD)', ucId: 'CRD', descricao: 'Utilizar micrômetro externo com resolução de 0,01mm para medição de eixos e diâmetros de precisão.' },
-  { id: 'crd_cap3', codigo: 'CAP.03 (CRD)', ucId: 'CRD', descricao: 'Realizar medições angulares utilizando goniômetro mecânico conforme especificações de desenho.' },
+  { id: 'crd_ct1', codigo: 'CRD - CT1', descricao: 'MEDIR COMPONENTES MECÂNICOS UTILIZANDO PAQUÍMETRO COM RESOLUÇÃO DE 0,05MM E 0,02MM.', ucId: 'CRD' },
+  { id: 'crd_ct2', codigo: 'CRD - CT2', descricao: 'MEDIR COMPONENTES MECÂNICOS UTILIZANDO MICRÔMETRO MILESIMAL.', ucId: 'CRD' },
+  { id: 'crd_cs1', codigo: 'CRD - CS1', descricao: 'DEMONSTRAR RIGOR TÉCNICO NO MANUSEIO DE INSTRUMENTOS DE MEDIÇÃO.', ucId: 'CRD' },
 
   // LIDT - Leitura e Interpretação de Desenho Técnico
-  { id: 'lidt_cap1', codigo: 'CAP.01 (LIDT)', ucId: 'LIDT', descricao: 'Interpretar vistas ortográficas, cortes e seções de conjuntos mecânicos conforme normas ABNT.' },
-  { id: 'lidt_cap2', codigo: 'CAP.02 (LIDT)', ucId: 'LIDT', descricao: 'Identificar tolerâncias lineares, geométricas e estados de superfície (rugosidade) em desenhos de fabricação.' },
+  { id: 'lidt_ct1', codigo: 'LIDT - CT1', descricao: 'INTERPRETAR PROJEÇÕES ORTOGRÁFICAS E CORTES EM DESENHOS MECÂNICOS.', ucId: 'LIDT' },
+  { id: 'lidt_ct2', codigo: 'LIDT - CT2', descricao: 'INTERPRETAR TOLERÂNCIAS GEOMÉTRICAS E DIMENSIONAIS EM PROJETOS.', ucId: 'LIDT' },
 
   // CMAT - Ciência dos Materiais
-  { id: 'cmat_cap1', codigo: 'CAP.01 (CMAT)', ucId: 'CMAT', descricao: 'Selecionar materiais metálicos (ferrosos e não-ferrosos) adequados ao processo de usinagem com base em suas propriedades.' },
-  { id: 'cmat_cap2', codigo: 'CAP.02 (CMAT)', ucId: 'CMAT', descricao: 'Identificar a influência de tratamentos térmicos na usinabilidade e dureza dos aços operados na oficina.' }
+  { id: 'cmat_ct1', codigo: 'CMAT - CT1', descricao: 'IDENTIFICAR MATERIAIS METÁLICOS SEGUNDO SUAS PROPRIEDADES MECÂNICAS E APLICAÇÕES.', ucId: 'CMAT' }
 ];
 
 export function getDescricaoRubrica(capacidadeId: string, nivel: NivelDesempenho): string {
-  const descricoes: Record<NivelDesempenho, string> = {
-    NSA: 'Não Satisfez: Não realiza a operação ou exige intervenção total para manter os padrões técnicos de tolerância.',
-    APO: 'Com Apoio: Realiza a operação técnica apresentando dúvidas frequentes e necessitando de orientação constante do instrutor.',
-    PAR: 'Parcial: Executa a tarefa com segurança, mas comete pequenos desvios de acabamento ou tempo de fabricação estabelecido.',
-    AUT: 'Autônomo: Executa a operação com total precisão, respeitando tolerâncias do desenho, normas de segurança e tempo padrão.'
+  const rubricas: { [key: string]: { [key in NivelDesempenho]: string } } = {
+    padrao: {
+      NSA: 'Não Atendeu: O estudante não demonstra a capacidade técnica avaliada.',
+      APO: 'Atendeu Parcialmente com Orientação: Executa a tarefa apenas se houver intervenção constante do instrutor.',
+      PAR: 'Atendeu Parcialmente: Executa de forma autônoma, apresentando pequenas falhas que não comprometem o resultado.',
+      AUT: 'Atendeu com Autonomia: Executa a operação com perfeição, precisão e total domínio técnico.'
+    }
   };
-  return descricoes[nivel];
+  return rubricas[capacidadeId]?.[nivel] || rubricas['padrao'][nivel];
 }
