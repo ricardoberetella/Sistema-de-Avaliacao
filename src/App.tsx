@@ -7,7 +7,7 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// Ignora temporariamente a falta de tipagem estrita para passar no build de produção da Vercel
+// Ignora a falta de tipagem estrita para o build de produção da Vercel
 // @ts-ignore
 import html2pdf from 'html2pdf.js/dist/html2pdf.min.js';
 
@@ -146,8 +146,16 @@ export default function App() {
   });
 
   const exportarRelatorioPDF = () => {
-    const elemento = document.getElementById('relatorio-pdf-container');
-    if (!elemento) return;
+    const elementoOriginal = document.getElementById('relatorio-pdf-container');
+    if (!elementoOriginal) return;
+
+    // Criamos um clone em memória para isolar completamente a renderização do PDF da tela do usuário
+    const cloneElemento = elementoOriginal.cloneNode(true) as HTMLElement;
+    cloneElemento.classList.remove('hidden');
+    cloneElemento.style.position = 'absolute';
+    cloneElemento.style.left = '-9999px';
+    cloneElemento.style.top = '-9999px';
+    document.body.appendChild(cloneElemento);
 
     const nomeArquivo = `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}.pdf`;
 
@@ -159,15 +167,18 @@ export default function App() {
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
-    // Torna o container visível temporariamente para a captura
-    elemento.classList.remove('hidden');
-    
-    // Configura e força o download nativo do arquivo em formato binário (blob)
-    html2pdf().set(opt).from(elemento).toPdf().get('pdf').then((pdf: any) => {
-      pdf.save(nomeArquivo);
-      // Oculta o container novamente após o gatilho de download do navegador
-      elemento.classList.add('hidden');
-    });
+    // Executa o download nativo de forma direta e limpa o clone imediatamente depois
+    html2pdf()
+      .set(opt)
+      .from(cloneElemento)
+      .save()
+      .then(() => {
+        document.body.removeChild(cloneElemento);
+      })
+      .catch((err: any) => {
+        console.error("Erro ao baixar PDF:", err);
+        document.body.removeChild(cloneElemento);
+      });
   };
 
   return (
@@ -336,7 +347,7 @@ export default function App() {
                           <textarea
                             value={textoObs}
                             onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                            placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..."
+                            placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
                             className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400"
                           />
                           {nivelAtual && (
@@ -399,53 +410,59 @@ export default function App() {
           </div>
         )}
 
-        {/* Container Oculto do Relatório PDF */}
-        <div id="relatorio-pdf-container" className="hidden p-10 bg-white text-slate-900 w-[297mm]">
-          <div className="border-4 border-[#004fa3] p-6">
-            <div className="flex justify-between items-center border-b-2 border-slate-300 pb-4 mb-6">
-              <div>
-                <span className="bg-red-600 text-white font-black px-4 py-1 italic tracking-tighter text-xl">SENAI</span>
-                <h2 className="text-xl font-black uppercase text-[#004fa3] mt-2">Pauta de Avaliação por Capacidades Sociais e Técnicas</h2>
-                <p className="text-xs font-bold text-slate-500 uppercase">Habilitação Profissional: Mecânico de Usinagem Convencional</p>
+        {/* Container que fica permanentemente oculto e seguro na aplicação */}
+        <div id="relatorio-pdf-container" className="hidden">
+          <div style={{ padding: '40px', backgroundColor: '#ffffff', color: '#1e293b', width: '297mm', fontFamily: 'Arial, sans-serif' }}>
+            <div style={{ border: '4px solid #004fa3', padding: '24px' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'between', items: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '16px', marginBottom: '24px' }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{ backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', padding: '4px 16px', fontStyle: 'italic', fontSize: '20px' }}>SENAI</span>
+                  <h2 style={{ fontSize: '20px', fontWeight: '900', textTransform: 'uppercase', color: '#004fa3', marginTop: '12px', marginBottom: '4px' }}>Pauta de Avaliação por Capacidades Sociais e Técnicas</h2>
+                  <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Habilitação Profissional: Mecânico de Usinagem Convencional</p>
+                </div>
+                <div style={{ textAlign: 'right', minWidth: '150px' }}>
+                  <p style={{ fontSize: '16px', fontWeight: '900', color: '#334155', margin: '0 0 4px 0' }}>TURMA: <span style={{ color: '#dc2626' }}>{turmaAtiva}</span></p>
+                  <p style={{ fontSize: '12px', fontWeight: '900', color: '#64748b', margin: 0 }}>UC: {ucAtiva}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-black text-slate-700">TURMA: <span className="text-red-600">{turmaAtiva}</span></p>
-                <p className="text-xs font-black text-slate-500">UC: {ucAtiva}</p>
-              </div>
-            </div>
 
-            <table className="w-full border-collapse text-[10px]">
-              <thead>
-                <tr className="bg-slate-100 text-slate-700 font-black uppercase">
-                  <th className="border border-slate-300 p-2 text-left w-1/4">Nome do Aluno</th>
-                  {capacidadesFiltradas.map(c => (
-                    <th key={c.id} className="border border-slate-300 p-2 text-center">
-                      {c.codigo}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {alunosDaTurma.map(aluno => (
-                  <tr key={aluno.id} className="hover:bg-slate-50 font-bold uppercase">
-                    <td className="border border-slate-300 p-2 text-slate-800">{aluno.nome}</td>
-                    {capacidadesFiltradas.map(c => {
-                      const v = aluno.avaliacoes?.[c.id] || '-';
-                      return (
-                        <td key={c.id} className={`border border-slate-300 p-2 text-center font-black ${
-                          v === 'NSA' ? 'text-red-600 bg-red-50' :
-                          v === 'APO' ? 'text-amber-600 bg-amber-50' :
-                          v === 'PAR' ? 'text-blue-600 bg-blue-50' :
-                          v === 'AUT' ? 'text-emerald-600 bg-emerald-50' : 'text-slate-300'
-                        }`}>
-                          {v}
-                        </td>
-                      );
-                    })}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f5f9', color: '#334155', fontWeight: '900', textTransform: 'uppercase' }}>
+                    <th style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'left', width: '25%' }}>Nome do Aluno</th>
+                    {capacidadesFiltradas.map(c => (
+                      <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '10px', textAlign: 'center' }}>
+                        {c.codigo}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {alunosDaTurma.map(aluno => (
+                    <tr key={aluno.id} style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
+                      <td style={{ border: '1px solid #cbd5e1', padding: '8px', color: '#0f172a' }}>{aluno.nome}</td>
+                      {capacidadesFiltradas.map(c => {
+                        const v = aluno.avaliacoes?.[c.id] || '-';
+                        return (
+                          <td key={c.id} style={{ 
+                            border: '1px solid #cbd5e1', 
+                            padding: '8px', 
+                            textAlign: 'center', 
+                            fontWeight: '900',
+                            color: v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : v === 'PAR' ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#cbd5e1',
+                            backgroundColor: v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : 'transparent'
+                          }}>
+                            {v}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+            </div>
           </div>
         </div>
 
