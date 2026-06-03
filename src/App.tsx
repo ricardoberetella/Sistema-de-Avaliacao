@@ -132,6 +132,7 @@ export default function App() {
     return contagem;
   };
 
+  // Consolidação de estatísticas da UC atual
   const totalGeralRubricas = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
   capacidadesFiltradas.forEach(cap => {
     const c = getContagemRubricas(cap.id);
@@ -141,7 +142,13 @@ export default function App() {
     totalGeralRubricas.AUT += c.AUT;
   });
 
-  // Dispara a janela estável de impressão do navegador
+  const somaTotalRubricas = totalGeralRubricas.NSA + totalGeralRubricas.APO + totalGeralRubricas.PAR + totalGeralRubricas.AUT;
+
+  const obterPorcentagem = (valor: number) => {
+    if (somaTotalRubricas === 0) return '0%';
+    return `${((valor / somaTotalRubricas) * 100).toFixed(1)}%`;
+  };
+
   const exportarRelatorioPDF = () => {
     const tituloOriginal = document.title;
     document.title = `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}`;
@@ -152,14 +159,16 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
       
-      {/* Estilos CSS Avançados para impressão nativa do navegador */}
       <style>{`
-        /* Oculta o container da pauta na tela normal */
+        /* Evita que elementos escondidos fiquem invisíveis para o motor de impressão */
         #relatorio-pdf-container {
-          display: none;
+          position: absolute;
+          left: -9999px;
+          top: -9999px;
+          opacity: 0;
+          pointer-events: none;
         }
 
-        /* Regras aplicadas unicamente na geração do documento impresso/PDF */
         @media print {
           body * {
             visibility: hidden;
@@ -169,13 +178,14 @@ export default function App() {
           }
           #relatorio-pdf-container {
             display: block !important;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            opacity: 1 !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
           }
           
-          /* FORÇA todas as rubricas azuis (como o PAR) a serem impressas na cor PRETA */
+          /* Altera a cor azul do critério PAR para preto apenas na impressão */
           .rubrica-azul-impressao {
             color: #000000 !important;
           }
@@ -355,7 +365,7 @@ export default function App() {
                             <textarea
                               value={textoObs}
                               onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                              placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..."
+                              placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
                               className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400"
                             />
                             {nivelAtual && (
@@ -384,35 +394,94 @@ export default function App() {
             </div>
           )}
 
+          {/* PAINEL DE ESTATÍSTICAS REESTRUTURADO COM CORES, PORCENTAGENS E BARRAS DE PROGRESSO */}
           {verGraficos && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-white w-full max-w-3xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100">
+              <div className="bg-white w-full max-w-xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100">
                 <div className="p-6 bg-[#004fa3] text-white flex justify-between items-center">
-                  <h3 className="text-base font-black uppercase tracking-wider">📊 Estatísticas Consolidadas - Turma {turmaAtiva}</h3>
+                  <h3 className="text-sm font-black uppercase tracking-wider">📊 Desempenho Consolidado - Turma {turmaAtiva}</h3>
                   <button onClick={() => setVerGraficos(false)} className="text-white/80 hover:text-white font-black text-sm">✕</button>
                 </div>
-                <div className="p-6 space-y-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                    <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
-                      <span className="block text-xs font-black text-red-500 uppercase tracking-wider">NSA</span>
-                      <span className="text-3xl font-black text-red-700">{totalGeralRubricas.NSA}</span>
+                
+                <div className="p-6 space-y-5 bg-white">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Distribuição percentual de critérios na Unidade Curricular ({ucAtiva}):
+                  </p>
+
+                  {/* INDICADOR - NSA */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs font-black">
+                      <span className="text-red-600 tracking-wide">NSA - NÃO SATISFATÓRIO</span>
+                      <span className="text-red-700 bg-red-50 px-2 py-0.5 rounded-md">
+                        {totalGeralRubricas.NSA} ({obterPorcentagem(totalGeralRubricas.NSA)})
+                      </span>
                     </div>
-                    <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
-                      <span className="block text-xs font-black text-amber-600 uppercase tracking-wider">APO</span>
-                      <span className="text-3xl font-black text-amber-700">{totalGeralRubricas.APO}</span>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                      <span className="block text-xs font-black text-blue-500 uppercase tracking-wider">PAR</span>
-                      <span className="text-3xl font-black text-blue-700">{totalGeralRubricas.PAR}</span>
-                    </div>
-                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-                      <span className="block text-xs font-black text-emerald-500 uppercase tracking-wider">AUT</span>
-                      <span className="text-3xl font-black text-emerald-500">{totalGeralRubricas.AUT}</span>
+                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-red-600 h-full transition-all duration-500" 
+                        style={{ width: obterPorcentagem(totalGeralRubricas.NSA) }}
+                      />
                     </div>
                   </div>
+
+                  {/* INDICADOR - APO */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs font-black">
+                      <span className="text-amber-500 tracking-wide">APO - COM APOIO</span>
+                      <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                        {totalGeralRubricas.APO} ({obterPorcentagem(totalGeralRubricas.APO)})
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-amber-500 h-full transition-all duration-500" 
+                        style={{ width: obterPorcentagem(totalGeralRubricas.APO) }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* INDICADOR - PAR */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs font-black">
+                      <span className="text-blue-600 tracking-wide">PAR - PARCIALMENTE AUTÔNOMO</span>
+                      <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+                        {totalGeralRubricas.PAR} ({obterPorcentagem(totalGeralRubricas.PAR)})
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-blue-600 h-full transition-all duration-500" 
+                        style={{ width: obterPorcentagem(totalGeralRubricas.PAR) }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* INDICADOR - AUT */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs font-black">
+                      <span className="text-emerald-600 tracking-wide">AUT - AUTÔNOMO</span>
+                      <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                        {totalGeralRubricas.AUT} ({obterPorcentagem(totalGeralRubricas.AUT)})
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-emerald-600 h-full transition-all duration-500" 
+                        style={{ width: obterPorcentagem(totalGeralRubricas.AUT) }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    <span>Total de Rubricas Lançadas:</span>
+                    <span className="text-slate-700">{somaTotalRubricas}</span>
+                  </div>
                 </div>
+
                 <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                  <button onClick={() => setVerGraficos(false)} className="px-5 py-2 bg-slate-700 text-white font-black text-xs rounded-xl uppercase tracking-wider">Fechar</button>
+                  <button onClick={() => setVerGraficos(false)} className="px-5 py-2 bg-slate-700 text-white font-black text-xs rounded-xl uppercase tracking-wider">
+                    Fechar Estatísticas
+                  </button>
                 </div>
               </div>
             </div>
@@ -420,7 +489,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* CONTAINER DO RELATÓRIO PREPARADO PARA IMPRESSÃO */}
+      {/* CONTAINER DO RELATÓRIO OFICIAL SENAI */}
       <div id="relatorio-pdf-container">
         <div style={{ padding: '20px', color: '#1e293b', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff' }}>
           <div style={{ border: '3px solid #004fa3', padding: '20px', backgroundColor: '#ffffff' }}>
@@ -471,7 +540,6 @@ export default function App() {
                     {capacidadesFiltradas.map(c => {
                       const v = aluno.avaliacoes?.[c.id] || '-';
                       
-                      // Configura classes e cores dinâmicas para o documento
                       const isPar = v === 'PAR';
                       const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
                       const corFundo = v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : '#ffffff';
