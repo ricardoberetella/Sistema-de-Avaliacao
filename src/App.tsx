@@ -26,7 +26,6 @@ export default function App() {
   const capacidadesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  // Validação do formulário de login
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (senhaInput === 'ianes662') {
@@ -53,7 +52,7 @@ export default function App() {
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
           observacoes: dados.observacoes || {},
-          notasNumericas: dados.notasNumericas || {}
+          notesNumericas: dados.notasNumericas || {}
         });
       });
       listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -199,129 +198,72 @@ export default function App() {
     document.title = tituloOriginal;
   };
 
-  // TELA DE LOGIN (Caso não esteja autenticado)
   if (!autenticado) {
     return (
       <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4 antialiased font-sans">
         <div className="w-full max-w-md bg-white rounded-[24px] shadow-xl border border-slate-100 overflow-hidden">
-          
           <div className="bg-[#004fa3] p-8 text-center relative">
             <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic text-white inline-block mb-4 shadow">
               SENAI
             </div>
-            <h2 className="text-white text-md font-black uppercase tracking-wider block">
-              Sistema de Avaliação
-            </h2>
-            <p className="text-blue-200 text-xs mt-1 font-bold">
-              Mecânico de Usinagem Convencional
-            </p>
+            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Avaliação</h2>
+            <p className="text-blue-200 text-xs mt-1 font-bold">Mecânico de Usinagem Convencional</p>
           </div>
 
           <form onSubmit={handleLoginSubmit} className="p-8 space-y-6">
             <div className="space-y-2">
-              <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block">
-                Chave de Acesso do Instrutor
-              </label>
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block">Chave de Acesso do Instrutor</label>
               <input
                 type="password"
                 value={senhaInput}
                 onChange={(e) => setSenhaInput(e.target.value)}
                 placeholder="Digite a senha..."
-                className={`w-full h-[48px] px-4 bg-slate-50 border-2 ${
-                  erroLogin ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-blue-500'
-                } text-slate-800 text-center font-black tracking-widest rounded-xl focus:outline-none transition-all shadow-inner text-sm`}
+                className={`w-full h-[48px] px-4 bg-slate-50 border-2 ${erroLogin ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-blue-500'} text-slate-800 text-center font-black tracking-widest rounded-xl focus:outline-none transition-all shadow-inner text-sm`}
                 autoFocus
               />
-              {erroLogin && (
-                <p className="text-red-600 text-[10px] font-black uppercase tracking-wide text-center mt-1">
-                  ❌ Senha incorreta! Tente novamente.
-                </p>
-              )}
+              {erroLogin && <p className="text-red-600 text-[10px] font-black uppercase tracking-wide text-center mt-1">❌ Senha incorreta! Tente novamente.</p>}
             </div>
-
-            <button
-              type="submit"
-              className="w-full h-[48px] bg-[#004fa3] hover:bg-[#003670] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow shadow-blue-900/20"
-            >
-              Entrar no Sistema
-            </button>
+            <button type="submit" className="w-full h-[48px] bg-[#004fa3] hover:bg-[#003670] text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow shadow-blue-900/20">Entrar no Sistema</button>
           </form>
 
           <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 text-center">
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-              Área Restrita — Documentação Pedagógica Oficial
-            </p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Área Restrita — Documentação Pedagógica Oficial</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // INTERFACE PRINCIPAL (Acessada após o Login)
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
-      
       <style>{`
-        #relatorio-pdf-container {
-          display: none;
-        }
-
+        #relatorio-pdf-container { display: none; }
         @media print {
-          .conteudo-tela {
-            display: none !important;
-          }
-          body {
-            background-color: #ffffff !important;
-          }
-          #relatorio-pdf-container {
-            display: block !important;
-            position: relative !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-          }
-          
-          .rubrica-azul-impressao {
-            color: #000000 !important;
-          }
-
-          @page {
-            size: A4 landscape;
-            margin: 10mm;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
+          .conteudo-tela { display: none !important; }
+          body { background-color: #ffffff !important; }
+          #relatorio-pdf-container { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; opacity: 1 !important; pointer-events: auto !important; }
+          .rubrica-azul-impressao { color: #000000 !important; }
+          @page { size: A4 landscape; margin: 10mm; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
       `}</style>
 
       <div className="conteudo-tela">
         <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
-            <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic shrink-0 hidden sm:block">
-              SENAI
-            </div>
-            
-            {/* Bloco do título centralizado de forma responsiva */}
+            <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic shrink-0 hidden sm:block">SENAI</div>
             <div className="text-center mx-auto lg:mx-0 lg:text-left flex-1">
-              <h1 className="text-lg md:text-xl font-black uppercase tracking-wider block">
-                Sistema de Avaliação
-              </h1>
-              <p className="text-blue-200 text-xs md:text-sm font-bold uppercase tracking-wide mt-0.5 block">
-                Mecânico de Usinagem Convencional
-              </p>
+              <h1 className="text-lg md:text-xl font-black uppercase tracking-wider block">Sistema de Avaliação</h1>
+              <p className="text-blue-200 text-xs md:text-sm font-bold uppercase tracking-wide mt-0.5 block">Mecânico de Usinagem Convencional</p>
               
               <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3 justify-center lg:justify-start">
-                {(['FUSI', 'CRD', 'LIDT', 'CMAT'] as UCId[]).map((sigla) => (
+                {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as UCId[]).map((sigla) => (
                   <button 
                     key={sigla}
                     onClick={() => { setUcAtiva(sigla); setCapSelecionada(null); }}
                     className={`text-xs font-black uppercase tracking-wider transition-all pb-0.5 ${ucAtiva === sigla ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
                   >
-                    {sigla === 'FUSI' ? 'FUSI (Usinagem)' : sigla === 'CRD' ? 'CRD (Metrologia)' : sigla === 'LIDT' ? 'LIDT (Desenho)' : 'CMAT (Materiais)'}
+                    {sigla === 'FUSI' ? 'FUSI (Usinagem)' : sigla === 'CRD' ? 'CRD (Metrologia)' : sigla === 'LIDT' ? 'LIDT (Desenho)' : 'CIEMA (Materiais)'}
                   </button>
                 ))}
               </div>
@@ -334,100 +276,53 @@ export default function App() {
                 <button
                   key={t}
                   onClick={() => { setTurmaAtiva(t); setCapSelecionada(null); }}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-black tracking-wide transition-all ${
-                    turmaAtiva === t ? 'bg-white text-[#004fa3] shadow' : 'text-blue-200 hover:text-white bg-transparent'
-                  }`}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-black tracking-wide transition-all ${turmaAtiva === t ? 'bg-white text-[#004fa3] shadow' : 'text-blue-200 hover:text-white bg-transparent'}`}
                 >
                   {t}
                 </button>
               ))}
             </div>
-            
-            <button
-              onClick={() => setAutenticado(false)}
-              className="p-2 bg-red-600 hover:bg-red-700 text-white font-black text-[10px] rounded-xl tracking-wider uppercase transition-colors shadow-sm"
-              title="Sair do Sistema"
-            >
-              Sair 🚪
-            </button>
+            <button onClick={() => setAutenticado(false)} className="p-2 bg-red-600 hover:bg-red-700 text-white font-black text-[10px] rounded-xl tracking-wider uppercase transition-colors shadow-sm" title="Sair do Sistema">Sair 🚪</button>
           </div>
         </header>
 
         <main className="p-8 max-w-[1600px] mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-3xl font-black italic text-[#004fa3] uppercase tracking-tight">
-                TURMA {turmaAtiva}
-              </h2>
+              <h2 className="text-3xl font-black italic text-[#004fa3] uppercase tracking-tight">TURMA {turmaAtiva}</h2>
               <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">
                 {ucAtiva === 'FUSI' ? 'Fundamentos da Usinagem' : ucAtiva === 'CRD' ? 'Controle Dimensional' : ucAtiva === 'LIDT' ? 'Leitura de Desenho Técnico' : 'Ciência dos Materiais'}
               </span>
-              
-              <button
-                onClick={() => setVerGraficos(true)}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] rounded-lg tracking-wider uppercase flex items-center gap-1 shadow-sm transition-colors"
-              >
-                📊 Estatísticas da Turma
-              </button>
-              <button
-                onClick={exportarRelatorioPDF}
-                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-black text-[10px] rounded-lg tracking-wider uppercase flex items-center gap-1 shadow-sm transition-colors"
-              >
-                Salvar PDF / Imprimir 📄
-              </button>
+              <button onClick={() => setVerGraficos(true)} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] rounded-lg tracking-wider uppercase flex items-center gap-1 shadow-sm transition-colors">📊 Estatísticas da Turma</button>
+              <button onClick={exportarRelatorioPDF} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-black text-[10px] rounded-lg tracking-wider uppercase flex items-center gap-1 shadow-sm transition-colors">Salvar PDF / Imprimir 📄</button>
             </div>
 
             <form onSubmit={handleAddAluno} className="flex items-center gap-3 w-full sm:w-auto">
-              <input
-                type="text"
-                value={novoNome}
-                onChange={(e) => setNovoNome(e.target.value)}
-                placeholder="NOME DO ALUNO..."
-                className="w-full sm:w-64 h-[44px] px-4 bg-white text-slate-700 placeholder-slate-400 font-bold border-2 border-red-600 rounded-xl focus:outline-none shadow-sm text-xs tracking-wide"
-              />
-              <button
-                type="submit"
-                className="h-[44px] px-6 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl transition-colors tracking-wider uppercase shadow-sm"
-              >
-                ADD
-              </button>
+              <input type="text" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="NOME DO ALUNO..." className="w-full sm:w-64 h-[44px] px-4 bg-white text-slate-700 placeholder-slate-400 font-bold border-2 border-red-600 rounded-xl focus:outline-none shadow-sm text-xs tracking-wide" />
+              <button type="submit" className="h-[44px] px-6 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl transition-colors tracking-wider uppercase shadow-sm">ADD</button>
             </form>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {capacidadesFiltradas.map((cap) => (
-              <CapacidadeCard
-                key={cap.id}
-                capacidade={cap}
-                contagemRubricas={getContagemRubricas(cap.id)}
-                totalAlunos={alunosDaTurma.length}
-                onClick={() => setCapSelecionada(cap)}
-              />
+              <CapacidadeCard key={cap.id} capacidade={cap} contagemRubricas={getContagemRubricas(cap.id)} totalAlunos={alunosDaTurma.length} onClick={() => setCapSelecionada(cap)} />
             ))}
           </div>
 
           {capSelecionada && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
               <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
-                
                 <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
                   <div className="pr-4">
                     <span className="text-xs font-black text-blue-200 uppercase tracking-widest">{capSelecionada.codigo} - DIÁRIO DE CLASSE ({ucAtiva})</span>
                     <h3 className="text-sm font-bold uppercase mt-1 leading-relaxed text-slate-100">{capSelecionada.descricao}</h3>
                   </div>
-                  <button 
-                    onClick={() => setCapSelecionada(null)}
-                    className="text-white/80 hover:text-white font-black text-sm bg-black/20 w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                  >
-                    ✕
-                  </button>
+                  <button onClick={() => setCapSelecionada(null)} className="text-white/80 hover:text-white font-black text-sm bg-black/20 w-8 h-8 rounded-full flex items-center justify-center shrink-0">✕</button>
                 </div>
 
                 <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
                   {alunosDaTurma.length === 0 ? (
-                    <p className="text-xs font-bold text-slate-400 text-center py-12 bg-white rounded-xl border border-dashed border-slate-200">
-                      Nenhum aluno cadastrado nesta turma. Utilize o campo "ADD" no painel superior.
-                    </p>
+                    <p className="text-xs font-bold text-slate-400 text-center py-12 bg-white rounded-xl border border-dashed border-slate-200">Nenhum aluno cadastrado nesta turma. Utilize o campo "ADD" no painel superior.</p>
                   ) : (
                     alunosDaTurma.map((aluno) => {
                       const nivelAtual = aluno.avaliacoes ? aluno.avaliacoes[capSelecionada.id] : undefined;
@@ -436,20 +331,13 @@ export default function App() {
                       
                       return (
                         <div key={aluno.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
-                          
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-4">
                               <div>
                                 <span className="text-[10px] font-black text-slate-400 block tracking-wider">ESTUDANTE</span>
                                 <span className="text-sm font-black text-slate-900 uppercase tracking-wide">{aluno.nome}</span>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleExcluirAluno(aluno.id, aluno.nome)}
-                                className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-black tracking-wider uppercase transition-colors"
-                              >
-                                Excluir Aluno 🗑️
-                              </button>
+                              <button type="button" onClick={() => handleExcluirAluno(aluno.id, aluno.nome)} className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-black tracking-wider uppercase transition-colors">Excluir Aluno 🗑️</button>
                             </div>
 
                             <div className="flex flex-col items-end gap-3 shrink-0">
@@ -458,52 +346,24 @@ export default function App() {
                                   <button
                                     key={nivel}
                                     onClick={() => handleDefinirRubrica(aluno.id, capSelecionada.id, nivel)}
-                                    className={`px-3 py-2 rounded-xl text-xs font-black tracking-tight transition-all border ${
-                                      nivelAtual === nivel
-                                        ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600'
-                                          : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500'
-                                          : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600'
-                                          : 'bg-emerald-600 text-white border-emerald-600'
-                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'
-                                    }`}
+                                    className={`px-3 py-2 rounded-xl text-xs font-black tracking-tight transition-all border ${nivelAtual === nivel ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600' : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500' : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
                                   >
                                     {nivel}
                                   </button>
                                 ))}
                               </div>
-                              
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={notaNum}
-                                  onChange={(e) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value)}
-                                  placeholder="Ex: 85"
-                                  className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner"
-                                />
+                                <input type="number" min="0" max="100" value={notaNum} onChange={(e) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value)} placeholder="Ex: 85" className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner" />
                               </div>
                             </div>
                           </div>
 
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 block tracking-wider uppercase mb-1">
-                              Evidências / Observações de Desempenho
-                            </label>
-                            <textarea
-                              value={textoObs}
-                              onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)}
-                              placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
-                              className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400"
-                            />
-                            {nivelAtual && (
-                              <p className="text-[10px] text-slate-400 font-bold italic mt-1">
-                                Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capSelecionada.id, nivelAtual)}</span>
-                              </p>
-                            )}
+                            <label className="text-[10px] font-black text-slate-400 block tracking-wider uppercase mb-1">Evidências / Observações de Desempenho</label>
+                            <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
+                            {nivelAtual && <p className="text-[10px] text-slate-400 font-bold italic mt-1">Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capSelecionada.id, nivelAtual)}</span></p>}
                           </div>
-
                         </div>
                       );
                     })
@@ -511,14 +371,8 @@ export default function App() {
                 </div>
 
                 <div className="p-4 bg-slate-100 border-t border-slate-200 flex justify-end">
-                  <button
-                    onClick={() => setCapSelecionada(null)}
-                    className="px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-colors"
-                  >
-                    Fechar Diário
-                  </button>
+                  <button onClick={() => setCapSelecionada(null)} className="px-5 py-2 bg-slate-700 hover:bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider transition-colors">Fechar Diário</button>
                 </div>
-
               </div>
             </div>
           )}
@@ -532,67 +386,45 @@ export default function App() {
                 </div>
                 
                 <div className="p-6 space-y-5 bg-white">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Distribuição percentual de critérios na Unidade Curricular ({ucAtiva}):
-                  </p>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Distribuição percentual de critérios na Unidade Curricular ({ucAtiva}):</p>
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-red-600 tracking-wide">NSA - NÃO SATISFATÓRIO</span>
-                      <span className="text-red-700 bg-red-50 px-2 py-0.5 rounded-md">
-                        {totalGeralRubricas.NSA} ({obterPorcentagem(totalGeralRubricas.NSA)})
-                      </span>
+                      <span className="text-red-700 bg-red-50 px-2 py-0.5 rounded-md">{totalGeralRubricas.NSA} ({obterPorcentagem(totalGeralRubricas.NSA)})</span>
                     </div>
                     <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-red-600 h-full transition-all duration-500" 
-                        style={{ width: obterPorcentagem(totalGeralRubricas.NSA) }}
-                      />
+                      <div className="bg-red-600 h-full transition-all duration-500" style={{ width: obterPorcentagem(totalGeralRubricas.NSA) }} />
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-amber-500 tracking-wide">APO - COM APOIO</span>
-                      <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                        {totalGeralRubricas.APO} ({obterPorcentagem(totalGeralRubricas.APO)})
-                      </span>
+                      <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">{totalGeralRubricas.APO} ({obterPorcentagem(totalGeralRubricas.APO)})</span>
                     </div>
                     <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-amber-500 h-full transition-all duration-500" 
-                        style={{ width: obterPorcentagem(totalGeralRubricas.APO) }}
-                      />
+                      <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: obterPorcentagem(totalGeralRubricas.APO) }} />
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-blue-600 tracking-wide">PAR - PARCIALMENTE AUTÔNOMO</span>
-                      <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                        {totalGeralRubricas.PAR} ({obterPorcentagem(totalGeralRubricas.PAR)})
-                      </span>
+                      <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">{totalGeralRubricas.PAR} ({obterPorcentagem(totalGeralRubricas.PAR)})</span>
                     </div>
                     <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-blue-600 h-full transition-all duration-500" 
-                        style={{ width: obterPorcentagem(totalGeralRubricas.PAR) }}
-                      />
+                      <div className="bg-blue-600 h-full transition-all duration-500" style={{ width: obterPorcentagem(totalGeralRubricas.PAR) }} />
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs font-black">
                       <span className="text-emerald-600 tracking-wide">AUT - AUTÔNOMO</span>
-                      <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                        {totalGeralRubricas.AUT} ({obterPorcentagem(totalGeralRubricas.AUT)})
-                      </span>
+                      <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">{totalGeralRubricas.AUT} ({obterPorcentagem(totalGeralRubricas.AUT)})</span>
                     </div>
                     <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-emerald-600 h-full transition-all duration-500" 
-                        style={{ width: obterPorcentagem(totalGeralRubricas.AUT) }}
-                      />
+                      <div className="bg-emerald-600 h-full transition-all duration-500" style={{ width: obterPorcentagem(totalGeralRubricas.AUT) }} />
                     </div>
                   </div>
 
@@ -603,9 +435,7 @@ export default function App() {
                 </div>
 
                 <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                  <button onClick={() => setVerGraficos(false)} className="px-5 py-2 bg-slate-700 text-white font-black text-xs rounded-xl uppercase tracking-wider">
-                    Fechar Estatísticas
-                  </button>
+                  <button onClick={() => setVerGraficos(false)} className="px-5 py-2 bg-slate-700 text-white font-black text-xs rounded-xl uppercase tracking-wider">Fechar Estatísticas</button>
                 </div>
               </div>
             </div>
@@ -617,28 +447,17 @@ export default function App() {
       <div id="relatorio-pdf-container">
         <div style={{ padding: '20px', color: '#1e293b', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff' }}>
           <div style={{ border: '3px solid #004fa3', padding: '20px', backgroundColor: '#ffffff' }}>
-            
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
               <tbody>
                 <tr>
                   <td style={{ verticalAlign: 'top' }}>
-                    <div style={{ backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', display: 'inline-block', padding: '6px 16px', fontSize: '18px', fontStyle: 'italic', letterSpacing: '-1px' }}>
-                      SENAI
-                    </div>
-                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', color: '#004fa3', margin: '10px 0 4px 0' }}>
-                      Pauta de Avaliação por Capacidades Sociais e Técnicas
-                    </h2>
-                    <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>
-                      Habilitação Profissional: Mecânico de Usinagem Convencional
-                    </p>
+                    <div style={{ backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', display: 'inline-block', padding: '6px 16px', fontSize: '18px', fontStyle: 'italic', letterSpacing: '-1px' }}>SENAI</div>
+                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', color: '#004fa3', margin: '10px 0 4px 0' }}>Pauta de Avaliação por Capacidades Sociais e Técnicas</h2>
+                    <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Habilitação Profissional: Mecânico de Usinagem Convencional</p>
                   </td>
                   <td style={{ textAlign: 'right', verticalAlign: 'top', width: '150px' }}>
-                    <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#334155', margin: '0 0 4px 0' }}>
-                      TURMA: <span style={{ color: '#dc2626' }}>{turmaAtiva}</span>
-                    </p>
-                    <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', margin: 0 }}>
-                      UC: {ucAtiva}
-                    </p>
+                    <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#334155', margin: '0 0 4px 0' }}>TURMA: <span style={{ color: '#dc2626' }}>{turmaAtiva}</span></p>
+                    <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', margin: 0 }}>UC: {ucAtiva}</p>
                   </td>
                 </tr>
               </tbody>
@@ -649,41 +468,24 @@ export default function App() {
                 <tr style={{ backgroundColor: '#f1f5f9', color: '#334155', fontWeight: 'bold', textTransform: 'uppercase' }}>
                   <th style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'left', width: '25%' }}>Nome do Aluno</th>
                   {capacidadesFiltradas.map(c => (
-                    <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>
-                      {c.codigo}
-                    </th>
+                    <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{c.codigo}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {alunosDaTurma.map(aluno => (
                   <tr key={aluno.id} style={{ textTransform: 'uppercase' }}>
-                    <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>
-                      {aluno.nome}
-                    </td>
+                    <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>{aluno.nome}</td>
                     {capacidadesFiltradas.map(c => {
                       const v = aluno.avaliacoes?.[c.id] || '-';
                       const notaNumSalva = (aluno as any).notasNumericas?.[c.id];
-                      
                       const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
-                      
                       const isPar = v === 'PAR';
                       const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
                       const corFundo = v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : '#ffffff';
 
                       return (
-                        <td 
-                          key={c.id} 
-                          className={isPar ? 'rubrica-azul-impressao' : ''}
-                          style={{ 
-                            border: '1px solid #cbd5e1', 
-                            padding: '7px 8px', 
-                            textAlign: 'center', 
-                            fontWeight: 'bold',
-                            color: corTexto,
-                            backgroundColor: corFundo
-                          }}
-                        >
+                        <td key={c.id} className={isPar ? 'rubrica-azul-impressao' : ''} style={{ border: '1px solid #cbd5e1', padding: '7px 8px', textAlign: 'center', fontWeight: 'bold', color: corTexto, backgroundColor: corFundo }}>
                           {exibicaoCelula}
                         </td>
                       );
@@ -692,11 +494,9 @@ export default function App() {
                 ))}
               </tbody>
             </table>
-
           </div>
         </div>
       </div>
-
     </div>
   );
 }
