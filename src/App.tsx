@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './types';
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
@@ -8,7 +8,7 @@ import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 // ============================================================================
-// COMPONENTE ISOLADO (FORA DO APP): IMPEDE QUE O INPUT SEJA RECIADO E APAGUE OS DÍGITOS
+// COMPONENTE DE INPUT TOTALMENTE INDEPENDENTE
 // ============================================================================
 function NotaInput({ 
   valorInicial, 
@@ -17,34 +17,38 @@ function NotaInput({
   valorInicial: string; 
   onSalvar: (valor: string) => void 
 }) {
-  // Mantém o valor local independente para garantir digitação fluida
+  // Guardamos o valor inicial em uma referência para controlar mudanças externas (como trocar de aluno ou modal)
   const [valorLocal, setValorLocal] = useState(valorInicial);
+  const refInicial = useRef(valorInicial);
 
-  // Atualiza apenas se mudar de aluno ou capacidade no diário
-  useEffect(() => {
-    setValorLocal(valorInicial);
-  }, [valorInicial]);
+  // Se o valor inicial vindo de fora mudar (mudou de capacidade ou de aluno), atualiza o campo
+  if (refInicial.current !== valorInicial) {
+    refInicial.current = valorInicial;
+    if (valorLocal !== valorInicial) {
+      setValorLocal(valorInicial);
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let limpo = e.target.value.replace(/\D/g, ''); // Permite apenas números inteiros
+    let limpo = e.target.value.replace(/\D/g, ''); // Remove letras, aceita apenas números
     
     if (limpo !== '') {
       const num = parseInt(limpo, 10);
       if (num > 100) {
-        limpo = '100'; // Não deixa passar de 100
+        limpo = '100'; // Trava o limite superior em 100
       }
     }
     setValorLocal(limpo);
   };
 
   const handleBlur = () => {
-    onSalvar(valorLocal); // Grava no Firebase apenas ao sair do campo
+    onSalvar(valorLocal); // Envia para o banco APENAS quando o instrutor clica fora do campo
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onSalvar(valorLocal);
-      (e.target as HTMLInputElement).blur(); // Tira o foco ao carregar em Enter
+      (e.target as HTMLInputElement).blur(); // Tira o foco ao pressionar Enter
     }
   };
 
@@ -182,40 +186,47 @@ export default function App() {
     }
   };
 
+  // Salva de forma otimizada no estado local e dispara a gravação no banco
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorLimpo: string) => {
-    const alunoAlvo = alunos.find(a => a.id === alunoId);
-    if (!alunoAlvo) return;
-
-    const novasNotasNumericas = {
-      ...(alunoAlvo.notasNumericas || {}),
-      [capacidadeId]: valorLimpo
-    };
-
-    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
+    setAlunos(prev => prev.map(a => {
+      if (a.id === alunoId) {
+        return {
+          ...a,
+          notasNumericas: {
+            ...(a.notasNumericas || {}),
+            [capacidadeId]: valorLimpo
+          }
+        };
+      }
+      return a;
+    }));
 
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
-        notasNumericas: novasNotasNumericas
+        [`notasNumericas.${capacidadeId}`]: valorLimpo
       });
     } catch (error) {
-      console.error("Erro ao salvar nota numérica no Firebase:", error);
+      console.error("Erro ao salvar nota numérica:", error);
     }
   };
 
   const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
-    const alunoAlvo = alunos.find(a => a.id === alunoId);
-    if (!alunoAlvo) return;
-
-    const novasObservacoes = {
-      ...(alunoAlvo.observacoes || {}),
-      [capacidadeId]: texto
-    };
-
-    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, observacoes: novasObservacoes } : a));
+    setAlunos(prev => prev.map(a => {
+      if (a.id === alunoId) {
+        return {
+          ...a,
+          observacoes: {
+            ...(a.observacoes || {}),
+            [capacidadeId]: texto
+          }
+        };
+      }
+      return a;
+    }));
 
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
-        observacoes: novasObservacoes
+        [`observacoes.${capacidadeId}`]: texto
       });
     } catch (error) {
       console.error("Erro ao salvar observação:", error);
