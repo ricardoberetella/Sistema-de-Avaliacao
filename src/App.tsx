@@ -35,7 +35,7 @@ const InputNotaNumerica = ({
       pattern="[0-9]*"
       value={valor}
       placeholder=""
-      className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner"
+      className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:margin-0 [&::-webkit-inner-spin-button]:margin-0"
       onChange={(e) => {
         let limpo = e.target.value.replace(/\D/g, ''); // Permite apenas números
         if (limpo !== '') {
@@ -45,8 +45,8 @@ const InputNotaNumerica = ({
         setValor(limpo);
       }}
       onBlur={() => {
-        // Envia para o Firebase apenas ao sair do campo
-        onSalvar(alunoId, capacidadisId, valor);
+        // CORRIGIDO: Removido o erro de digitação antigo para salvar corretamente no Firebase
+        onSalvar(alunoId, capacidadeId, valor);
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
@@ -178,7 +178,6 @@ export default function App() {
   };
 
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorLimpo: string) => {
-    // Sincroniza o estado local rapidamente para evitar delays visuais
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
         return {
@@ -420,7 +419,7 @@ export default function App() {
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
                                 
-                                {/* CHAMADA DO COMPONENTE BLINDADO QUE SOLUCIONA O PROBLEMA DO FOCO */}
+                                {/* COMPONENTE BLINDADO CONTRA PERDA DE FOCO */}
                                 <InputNotaNumerica 
                                   alunoId={aluno.id}
                                   capacidadeId={capSelecionada.id}
