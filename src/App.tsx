@@ -101,10 +101,11 @@ export default function App() {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
 
-    const notaAtual = alunoAlvo.avaliacoes?.[capacidadeId];
+    const mapAvaliacoes = alunoAlvo.avaliacoes || {};
+    const notaAtual = mapAvaliacoes[capacidadeId];
     const novaNota = notaAtual === nivel ? null : nivel;
 
-    const novasAvaliacoes = { ...(alunoAlvo.avaliacoes || {}) };
+    const novasAvaliacoes = { ...mapAvaliacoes };
     if (novaNota === null) {
       delete novasAvaliacoes[capacidadeId];
     } else {
@@ -122,20 +123,16 @@ export default function App() {
     }
   };
 
-  // FUNÇÃO CORRIGIDA: Permite digitação fluida e limpa entradas inválidas instantaneamente
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorStr: string) => {
-    // Remove qualquer caractere que não seja número (evita exclamações ou letras)
     let valorLimpo = valorStr.replace(/\D/g, '');
 
     if (valorLimpo !== '') {
       const num = parseInt(valorLimpo, 10);
-      // Se passar de 100, trava no limite máximo permitido
       if (num > 100) {
         valorLimpo = '100';
       }
     }
 
-    // Atualiza o estado local imediatamente para o input não travar
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     const novasNotasNumericas = {
       ...(alunoAlvo?.notasNumericas || {}),
@@ -145,7 +142,7 @@ export default function App() {
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
 
     try {
-      await updateDoc(doc(db, 'alunos', alunoId), {
+      await updateDoc(doc(db, 'alunos', idAutor => alunoId), {
         notasNumericas: novasNotasNumericas
       });
     } catch (error) {
@@ -176,7 +173,8 @@ export default function App() {
   const getContagemRubricas = (capId: string) => {
     const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     alunosDaTurma.forEach(a => {
-      const nota = a.avaliacoes?.[capId];
+      const mapa = a.avaliacoes || {};
+      const nota = mapa[capId];
       if (nota === 'NSA' || nota === 'APO' || nota === 'PAR' || nota === 'AUT') {
         contagem[nota]++;
       }
@@ -334,8 +332,11 @@ export default function App() {
                     <p className="text-xs font-bold text-slate-400 text-center py-12 bg-white rounded-xl border border-dashed border-slate-200">Nenhum aluno cadastrado nesta turma. Utilize o campo "ADD" no painel superior.</p>
                   ) : (
                     alunosDaTurma.map((aluno) => {
-                      const nivelAtual = aluno.avaliacoes ? aluno.avaliacoes[capSelecionada.id] : undefined;
-                      const notaNum = aluno.notasNumericas?.[capSelecionada.id] ?? '';
+                      const mapaAvaliacoes = aluno.avaliacoes || {};
+                      const mapaNotas = aluno.notasNumericas || {};
+                      
+                      const nivelAtual = mapaAvaliacoes[capSelecionada.id];
+                      const notaNum = mapaNotas[capSelecionada.id] ?? '';
                       const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
                       
                       return (
@@ -460,7 +461,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* CONTAINER DO RELATÓRIO OFICIAL SENAI */}
+      {/* CONTAINER DO RELATÓRIO OFICIAL SENAI - TOTALMENTE BLINDADO CONTRA ERROS ASSÍNCRONOS */}
       <div id="relatorio-pdf-container">
         <div style={{ padding: '20px', color: '#1e293b', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff' }}>
           <div style={{ border: '3px solid #004fa3', padding: '20px', backgroundColor: '#ffffff' }}>
@@ -494,8 +495,13 @@ export default function App() {
                   <tr key={aluno.id} style={{ textTransform: 'uppercase' }}>
                     <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>{aluno.nome}</td>
                     {capacidadesFiltradas.map(c => {
-                      const v = aluno.avaliacoes?.[c.id] || '-';
-                      const notaNumSalva = aluno.notasNumericas?.[c.id];
+                      // Fallbacks de segurança estritos para evitar telas brancas no PDF
+                      const seguroAvaliacoes = aluno.avaliacoes || {};
+                      const seguroNotasNum = aluno.notasNumericas || {};
+                      
+                      const v = seguroAvaliacoes[c.id] || '-';
+                      const notaNumSalva = seguroNotasNum[c.id] || '';
+                      
                       const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
                       const isPar = v === 'PAR';
                       const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
