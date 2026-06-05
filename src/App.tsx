@@ -7,7 +7,9 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// COMPONENTE DE INPUT BLINDADO: Mantém a digitação na memória local de forma totalmente isolada
+// ============================================================================
+// COMPONENTE ISOLADO (FORA DO APP): IMPEDE QUE O INPUT SEJA RECIADO E APAGUE OS DÍGITOS
+// ============================================================================
 function NotaInput({ 
   valorInicial, 
   onSalvar 
@@ -15,9 +17,10 @@ function NotaInput({
   valorInicial: string; 
   onSalvar: (valor: string) => void 
 }) {
+  // Mantém o valor local independente para garantir digitação fluida
   const [valorLocal, setValorLocal] = useState(valorInicial);
 
-  // Sincroniza se o valor mudar externamente (ex: mudar de aluno ou de capacidade)
+  // Atualiza apenas se mudar de aluno ou capacidade no diário
   useEffect(() => {
     setValorLocal(valorInicial);
   }, [valorInicial]);
@@ -28,21 +31,20 @@ function NotaInput({
     if (limpo !== '') {
       const num = parseInt(limpo, 10);
       if (num > 100) {
-        limpo = '100'; // Define o teto máximo em 100
+        limpo = '100'; // Não deixa passar de 100
       }
     }
-    
     setValorLocal(limpo);
   };
 
   const handleBlur = () => {
-    onSalvar(valorLocal); // Envia o dado para o Firebase apenas quando sai do campo
+    onSalvar(valorLocal); // Grava no Firebase apenas ao sair do campo
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onSalvar(valorLocal);
-      (e.target as HTMLInputElement).blur(); // Tira o foco ao pressionar Enter
+      (e.target as HTMLInputElement).blur(); // Tira o foco ao carregar em Enter
     }
   };
 
@@ -61,6 +63,9 @@ function NotaInput({
   );
 }
 
+// ============================================================================
+// COMPONENTE PRINCIPAL
+// ============================================================================
 export default function App() {
   // Estados para o Controle de Acesso (Login)
   const [senhaInput, setSenhaInput] = useState('');
@@ -421,7 +426,6 @@ export default function App() {
 
                           <div>
                             <label className="text-[10px] font-black text-slate-400 block tracking-wider uppercase mb-1">Evidências / Observações de Desempenho</label>
-                            {/* NOME DA FUNÇÃO CORRIGIDO DE handleMudarObservation PARA handleMudarObservacao */}
                             <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
                             {nivelAtual && <p className="text-[10px] text-slate-400 font-bold italic mt-1">Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capSelecionada.id, nivelAtual)}</span></p>}
                           </div>
