@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './types';
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
@@ -7,60 +7,6 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// ============================================================================
-// COMPONENTE ISOLADO PARA A NOTA NUMÉRICA (BLINDAGEM DE FOCO)
-// ============================================================================
-const InputNotaNumerica = ({ 
-  alunoId, 
-  capacidadeId, 
-  valorInicial, 
-  onSalvar 
-}: { 
-  alunoId: string; 
-  capacidadeId: string; 
-  valorInicial: string; 
-  onSalvar: (alunoId: string, capacidadeId: string, valor: string) => void 
-}) => {
-  const [valor, setValor] = useState(valorInicial);
-
-  // Sincroniza se o valor no banco de dados mudar externamente
-  useEffect(() => {
-    setValor(valorInicial);
-  }, [valorInicial]);
-
-  return (
-    <input
-      type="text"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      value={valor}
-      placeholder=""
-      className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:margin-0 [&::-webkit-inner-spin-button]:margin-0"
-      onChange={(e) => {
-        let limpo = e.target.value.replace(/\D/g, ''); // Permite apenas números
-        if (limpo !== '') {
-          const num = parseInt(limpo, 10);
-          if (num > 100) limpo = '100'; // Limita o teto em 100
-        }
-        setValor(limpo);
-      }}
-      onBlur={() => {
-        // CORRIGIDO: Removido o erro de digitação antigo para salvar corretamente no Firebase
-        onSalvar(alunoId, capacidadeId, valor);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          onSalvar(alunoId, capacidadeId, valor);
-          (e.target as HTMLInputElement).blur(); // Remove o foco ao apertar Enter
-        }
-      }}
-    />
-  );
-};
-
-// ============================================================================
-// COMPONENTE PRINCIPAL DO SISTEMA
-// ============================================================================
 export default function App() {
   // Estados para o Controle de Acesso (Login)
   const [senhaInput, setSenhaInput] = useState('');
@@ -296,8 +242,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
+      {/* CSS INJETADO PARA REMOVER SETINHAS DE NÚMERO DE QUALQUER NAVEGADOR (CHROME, SAFARI, FIREFOX) */}
       <style>{`
         #relatorio-pdf-container { display: none; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
         @media print {
           .conteudo-tela { display: none !important; }
           body { background-color: #ffffff !important; }
@@ -419,12 +374,34 @@ export default function App() {
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
                                 
-                                {/* COMPONENTE BLINDADO CONTRA PERDA DE FOCO */}
-                                <InputNotaNumerica 
-                                  alunoId={aluno.id}
-                                  capacidadeId={capSelecionada.id}
-                                  valorInicial={notaNum}
-                                  onSalvar={handleMudarNotaNumerica}
+                                {/* LÓGICA TOTALMENTE NOVA: INPUT INCONTROLADO POR REF (NATIVO DO NAVEGADOR) */}
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  defaultValue={notaNum}
+                                  key={`${aluno.id}-${capSelecionada.id}-${notaNum}`} // Garante atualização se o banco mudar lá fora
+                                  placeholder="Ex: 85"
+                                  className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner"
+                                  onChange={(e) => {
+                                    // Limpeza em tempo real apenas para proibir letras, sem tocar no estado reativo do React
+                                    let limpo = e.target.value.replace(/\D/g, '');
+                                    if (limpo !== '') {
+                                      const num = parseInt(limpo, 10);
+                                      if (num > 100) limpo = '100';
+                                    }
+                                    e.target.value = limpo;
+                                  }}
+                                  onBlur={(e) => {
+                                    // Só grava no Firebase quando você sai do campo de texto
+                                    handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleMudarNotaNumerica(aluno.id, capSelecionada.id, (e.target as HTMLInputElement).value);
+                                      (e.target as HTMLInputElement).blur();
+                                    }
+                                  }}
                                 />
                               </div>
                             </div>
@@ -534,44 +511,4 @@ export default function App() {
               </tbody>
             </table>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#f1f5f9', color: '#334155', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                  <th style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'left', width: '25%' }}>Nome do Aluno</th>
-                  {capacidadesFiltradas.map(c => (
-                    <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{c.codigo}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {alunosDaTurma.map(aluno => (
-                  <tr key={aluno.id} style={{ textTransform: 'uppercase' }}>
-                    <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>{aluno.nome}</td>
-                    {capacidadesFiltradas.map(c => {
-                      const seguroAvaliacoes = aluno.avaliacoes || {};
-                      const seguroNotasNum = aluno.notasNumericas || {};
-                      
-                      const v = seguroAvaliacoes[c.id] || '-';
-                      const notaNumSalva = seguroNotasNum[c.id] || '';
-                      
-                      const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
-                      const isPar = v === 'PAR';
-                      const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
-                      const corFundo = v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : '#ffffff';
-
-                      return (
-                        <td key={c.id} className={isPar ? 'rubrica-azul-impressao' : ''} style={{ border: '1px solid #cbd5e1', padding: '7px 8px', textAlign: 'center', fontWeight: 'bold', color: corTexto, backgroundColor: corFundo }}>
-                          {exibicaoCelula}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+            <table style={{ width: '100%', borderCollapse: '
