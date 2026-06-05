@@ -52,7 +52,7 @@ export default function App() {
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
           observacoes: dados.observacoes || {},
-          notesNumericas: dados.notasNumericas || {}
+          notasNumericas: dados.notasNumericas || {}
         });
       });
       listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -122,15 +122,24 @@ export default function App() {
     }
   };
 
-  const handleMudarNotaNumerica = async (alunoId: string, capacidadId: string, valorStr: string) => {
-    if (valorStr !== '') {
-      const num = parseInt(valorStr, 10);
-      if (isNaN(num) || num < 0 || num > 100) return;
+  // FUNÇÃO CORRIGIDA: Permite digitação fluida e limpa entradas inválidas instantaneamente
+  const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorStr: string) => {
+    // Remove qualquer caractere que não seja número (evita exclamações ou letras)
+    let valorLimpo = valorStr.replace(/\D/g, '');
+
+    if (valorLimpo !== '') {
+      const num = parseInt(valorLimpo, 10);
+      // Se passar de 100, trava no limite máximo permitido
+      if (num > 100) {
+        valorLimpo = '100';
+      }
     }
 
+    // Atualiza o estado local imediatamente para o input não travar
+    const alunoAlvo = alunos.find(a => a.id === alunoId);
     const novasNotasNumericas = {
-      ...((alunos.find(a => a.id === alunoId) as any)?.notasNumericas || {}),
-      [capacidadId]: valorStr
+      ...(alunoAlvo?.notasNumericas || {}),
+      [capacidadeId]: valorLimpo
     };
 
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
@@ -326,7 +335,7 @@ export default function App() {
                   ) : (
                     alunosDaTurma.map((aluno) => {
                       const nivelAtual = aluno.avaliacoes ? aluno.avaliacoes[capSelecionada.id] : undefined;
-                      const notaNum = (aluno as any).notasNumericas?.[capSelecionada.id] || '';
+                      const notaNum = aluno.notasNumericas?.[capSelecionada.id] ?? '';
                       const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
                       
                       return (
@@ -354,7 +363,15 @@ export default function App() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
-                                <input type="number" min="0" max="100" value={notaNum} onChange={(e) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value)} placeholder="Ex: 85" className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner" />
+                                <input 
+                                  type="text" 
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  value={notaNum} 
+                                  onChange={(e) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value)} 
+                                  placeholder="0-100" 
+                                  className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner" 
+                                />
                               </div>
                             </div>
                           </div>
@@ -478,7 +495,7 @@ export default function App() {
                     <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>{aluno.nome}</td>
                     {capacidadesFiltradas.map(c => {
                       const v = aluno.avaliacoes?.[c.id] || '-';
-                      const notaNumSalva = (aluno as any).notasNumericas?.[c.id];
+                      const notaNumSalva = aluno.notasNumericas?.[c.id];
                       const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
                       const isPar = v === 'PAR';
                       const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
