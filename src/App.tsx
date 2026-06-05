@@ -146,6 +146,29 @@ export default function App() {
     }
   };
 
+  const handleMudarNotaNumerica = async (alunoId: string, capacidadId: string, valor: string) => {
+    setAlunos(prev => prev.map(a => {
+      if (a.id === alunoId) {
+        return {
+          ...a,
+          notasNumericas: {
+            ...(a.notasNumericas || {}),
+            [capacidadId]: valor
+          }
+        };
+      }
+      return a;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'alunos', alunoId), {
+        [`notasNumericas.${capacidadId}`]: valor
+      });
+    } catch (error) {
+      console.error("Erro ao salvar valor da nota:", error);
+    }
+  };
+
   const getContagemRubricas = (capId: string) => {
     const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     alunosDaTurma.forEach(a => {
@@ -311,6 +334,7 @@ export default function App() {
                       const mapaAvaliacoes = aluno.avaliacoes || {};
                       const nivelAtual = mapaAvaliacoes[capSelecionada.id];
                       const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
+                      const valorNota = (aluno.notasNumericas && aluno.notasNumericas[capSelecionada.id]) || '';
                       
                       return (
                         <div key={`${aluno.id}-${capSelecionada.id}`} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
@@ -323,17 +347,33 @@ export default function App() {
                               <button type="button" onClick={() => handleExcluirAluno(aluno.id, aluno.nome)} className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[10px] font-black tracking-wider uppercase transition-colors">Excluir Aluno 🗑️</button>
                             </div>
 
-                            <div className="flex flex-col items-end gap-3 shrink-0">
-                              <div className="flex flex-wrap gap-1.5">
-                                {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
-                                  <button
-                                    key={nivel}
-                                    onClick={() => handleDefinirRubrica(aluno.id, capSelecionada.id, nivel)}
-                                    className={`px-3 py-2 rounded-xl text-xs font-black tracking-tight transition-all border ${nivelAtual === nivel ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600' : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500' : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
-                                  >
-                                    {nivel}
-                                  </button>
-                                ))}
+                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 shrink-0">
+                              {/* CAMPO DE NOTA DIGITÁVEL */}
+                              <div className="flex flex-col items-start">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Nota (0-100)</span>
+                                <input 
+                                  type="text" 
+                                  value={valorNota} 
+                                  onChange={(e) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value)}
+                                  placeholder="Ex: 85" 
+                                  className="w-16 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none transition-all shadow-inner"
+                                />
+                              </div>
+
+                              {/* BOTÕES DE RUBRICAS */}
+                              <div className="flex flex-col items-start">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Critério SMO</span>
+                                <div className="flex gap-1.5">
+                                  {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
+                                    <button
+                                      key={nivel}
+                                      onClick={() => handleDefinirRubrica(aluno.id, capSelecionada.id, nivel)}
+                                      className={`px-3 py-2 h-[38px] rounded-xl text-xs font-black tracking-tight transition-all border ${nivelAtual === nivel ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600' : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500' : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
+                                    >
+                                      {nivel}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
