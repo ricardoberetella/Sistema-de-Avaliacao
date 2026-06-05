@@ -123,9 +123,12 @@ export default function App() {
     }
   };
 
+  // FUNÇÃO CORRIGIDA: Sem erros de sintaxe no Firebase e permitindo digitação livre
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorStr: string) => {
+    // Remove tudo o que não for número (limpa exclamações, letras, etc.)
     let valorLimpo = valorStr.replace(/\D/g, '');
 
+    // Se houver um número digitado, valida o limite máximo de 100
     if (valorLimpo !== '') {
       const num = parseInt(valorLimpo, 10);
       if (num > 100) {
@@ -133,6 +136,7 @@ export default function App() {
       }
     }
 
+    // Atualiza o estado local imediatamente para a digitação ficar leve e fluida
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     const novasNotasNumericas = {
       ...(alunoAlvo?.notasNumericas || {}),
@@ -142,7 +146,8 @@ export default function App() {
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
 
     try {
-      await updateDoc(doc(db, 'alunos', idAutor => alunoId), {
+      // Correção da referência do documento no Firestore
+      await updateDoc(doc(db, 'alunos', alunoId), {
         notasNumericas: novasNotasNumericas
       });
     } catch (error) {
@@ -461,7 +466,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* CONTAINER DO RELATÓRIO OFICIAL SENAI - TOTALMENTE BLINDADO CONTRA ERROS ASSÍNCRONOS */}
+      {/* CONTAINER DO RELATÓRIO OFICIAL SENAI */}
       <div id="relatorio-pdf-container">
         <div style={{ padding: '20px', color: '#1e293b', fontFamily: 'Arial, sans-serif', backgroundColor: '#ffffff' }}>
           <div style={{ border: '3px solid #004fa3', padding: '20px', backgroundColor: '#ffffff' }}>
@@ -495,7 +500,6 @@ export default function App() {
                   <tr key={aluno.id} style={{ textTransform: 'uppercase' }}>
                     <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>{aluno.nome}</td>
                     {capacidadesFiltradas.map(c => {
-                      // Fallbacks de segurança estritos para evitar telas brancas no PDF
                       const seguroAvaliacoes = aluno.avaliacoes || {};
                       const seguroNotasNum = aluno.notasNumericas || {};
                       
