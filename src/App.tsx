@@ -8,7 +8,7 @@ import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 // ============================================================================
-// COMPONENTE DE INPUT TOTALMENTE INDEPENDENTE
+// COMPONENTE DE INPUT INDEPENDENTE (BLINDADO CONTRA ON-SNAPSHOT)
 // ============================================================================
 function NotaInput({ 
   valorInicial, 
@@ -17,38 +17,42 @@ function NotaInput({
   valorInicial: string; 
   onSalvar: (valor: string) => void 
 }) {
-  // Guardamos o valor inicial em uma referência para controlar mudanças externas (como trocar de aluno ou modal)
   const [valorLocal, setValorLocal] = useState(valorInicial);
   const refInicial = useRef(valorInicial);
 
-  // Se o valor inicial vindo de fora mudar (mudou de capacidade ou de aluno), atualiza o campo
+  // Sincroniza o valor se mudar de aluno ou de capacidade técnica no modal
   if (refInicial.current !== valorInicial) {
     refInicial.current = valorInicial;
-    if (valorLocal !== valorInicial) {
-      setValorLocal(valorInicial);
-    }
+    setValorLocal(valorInicial);
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let limpo = e.target.value.replace(/\D/g, ''); // Remove letras, aceita apenas números
+    let limpo = e.target.value.replace(/\D/g, ''); // Permite apenas números inteiros
     
     if (limpo !== '') {
       const num = parseInt(limpo, 10);
       if (num > 100) {
-        limpo = '100'; // Trava o limite superior em 100
+        limpo = '100'; // Limita o teto máximo em 100
       }
     }
+    // ATENÇÃO: Atualiza apenas o estado local do input. Não mexe no Firebase ainda!
     setValorLocal(limpo);
   };
 
   const handleBlur = () => {
-    onSalvar(valorLocal); // Envia para o banco APENAS quando o instrutor clica fora do campo
+    // SÓ SALVA NO FIREBASE QUANDO O INSTRUTOR CLICA FORA DO CAMPO
+    if (valorLocal !== valorInicial) {
+      onSalvar(valorLocal);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      onSalvar(valorLocal);
-      (e.target as HTMLInputElement).blur(); // Tira o foco ao pressionar Enter
+      // SÓ SALVA NO FIREBASE QUANDO CARREGA ENTER
+      if (valorLocal !== valorInicial) {
+        onSalvar(valorLocal);
+      }
+      (e.target as HTMLInputElement).blur(); // Remove o foco do campo
     }
   };
 
@@ -68,7 +72,7 @@ function NotaInput({
 }
 
 // ============================================================================
-// COMPONENTE PRINCIPAL
+// COMPONENTE PRINCIPAL (APP)
 // ============================================================================
 export default function App() {
   // Estados para o Controle de Acesso (Login)
@@ -186,8 +190,9 @@ export default function App() {
     }
   };
 
-  // Salva de forma otimizada no estado local e dispara a gravação no banco
+  // ESTA FUNÇÃO AGORA SÓ É CHAMADA NO BLUR OU NO ENTER
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorLimpo: string) => {
+    // Atualiza o estado do React local de forma imediata
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
         return {
@@ -201,6 +206,7 @@ export default function App() {
       return a;
     }));
 
+    // Envia para o Firebase de forma segura usando dot-notation para não apagar outros dados
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`notasNumericas.${capacidadeId}`]: valorLimpo
