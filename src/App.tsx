@@ -7,6 +7,60 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
+// COMPONENTE ISOLADO: Garante que a digitação seja instantânea, fluida e não sofra interferência do Firebase
+function NotaInput({ 
+  valorInicial, 
+  onSalvar 
+}: { 
+  valorInicial: string; 
+  onSalvar: (valor: string) => void 
+}) {
+  const [valorLocal, setValorLocal] = useState(valorInicial);
+
+  // Sincroniza se o valor mudar externamente (ex: mudar de aluno ou turma)
+  useEffect(() => {
+    setValorLocal(valorInicial);
+  }, [valorInicial]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let limpo = e.target.value.replace(/\D/g, ''); // Remove tudo o que não for número
+    
+    if (limpo !== '') {
+      const num = parseInt(limpo, 10);
+      if (num > 100) {
+        limpo = '100'; // Trava o limite superior em 100
+      }
+    }
+    
+    setValorLocal(limpo);
+  };
+
+  const handleBlur = () => {
+    onSalvar(valorLocal); // Grava no Firebase apenas quando o utilizador sai do campo
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSalvar(valorLocal);
+      (e.target as HTMLInputElement).blur(); // Remove o foco ao carregar em Enter
+    }
+  };
+
+  return (
+    <input 
+      type="text" 
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={valorLocal} 
+      onChange={handleChange} 
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      placeholder="0-100" 
+      className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner" 
+    />
+  );
+}
+
 export default function App() {
   // Estados para o Controle de Acesso (Login)
   const [senhaInput, setSenhaInput] = useState('');
@@ -123,35 +177,25 @@ export default function App() {
     }
   };
 
-  // FUNÇÃO CORRIGIDA: Sem erros de sintaxe no Firebase e permitindo digitação livre
-  const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorStr: string) => {
-    // Remove tudo o que não for número (limpa exclamações, letras, etc.)
-    let valorLimpo = valorStr.replace(/\D/g, '');
-
-    // Se houver um número digitado, valida o limite máximo de 100
-    if (valorLimpo !== '') {
-      const num = parseInt(valorLimpo, 10);
-      if (num > 100) {
-        valorLimpo = '100';
-      }
-    }
-
-    // Atualiza o estado local imediatamente para a digitação ficar leve e fluida
+  // Função otimizada para salvar de forma segura e direta no banco de dados
+  const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorLimpo: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
+    if (!alunoAlvo) return;
+
     const novasNotasNumericas = {
-      ...(alunoAlvo?.notasNumericas || {}),
+      ...(alunoAlvo.notasNumericas || {}),
       [capacidadeId]: valorLimpo
     };
 
+    // Atualização otimista local
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
 
     try {
-      // Correção da referência do documento no Firestore
       await updateDoc(doc(db, 'alunos', alunoId), {
         notasNumericas: novasNotasNumericas
       });
     } catch (error) {
-      console.error("Erro ao salvar nota numérica:", error);
+      console.error("Erro ao salvar nota numérica no Firebase:", error);
     }
   };
 
@@ -369,14 +413,10 @@ export default function App() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
-                                <input 
-                                  type="text" 
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  value={notaNum} 
-                                  onChange={(e) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value)} 
-                                  placeholder="0-100" 
-                                  className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner" 
+                                {/* USO DO NOVO COMPONENTE DE INPUT INDEPENDENTE */}
+                                <NotaInput 
+                                  valorInicial={notaNum} 
+                                  onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, novoValor)} 
                                 />
                               </div>
                             </div>
@@ -384,7 +424,7 @@ export default function App() {
 
                           <div>
                             <label className="text-[10px] font-black text-slate-400 block tracking-wider uppercase mb-1">Evidências / Observações de Desempenho</label>
-                            <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
+                            <textarea value={textoObs} onChange={(e) => handleMudarObservation(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
                             {nivelAtual && <p className="text-[10px] text-slate-400 font-bold italic mt-1">Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capSelecionada.id, nivelAtual)}</span></p>}
                           </div>
                         </div>
@@ -475,7 +515,7 @@ export default function App() {
                 <tr>
                   <td style={{ verticalAlign: 'top' }}>
                     <div style={{ backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', display: 'inline-block', padding: '6px 16px', fontSize: '18px', fontStyle: 'italic', letterSpacing: '-1px' }}>SENAI</div>
-                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', color: '#004fa3', margin: '10px 0 4px 0' }}>Pauta de Avaliação por Capacidades Sociais e Técnicas</h2>
+                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', color: '#004fa3', margin: '10px 0 4px 0' }}>Pauta de Evaluation por Capacidades Sociais e Técnicas</h2>
                     <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Habilitação Profissional: Mecânico de Usinagem Convencional</p>
                   </td>
                   <td style={{ textAlign: 'right', verticalAlign: 'top', width: '150px' }}>
