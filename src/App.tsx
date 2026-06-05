@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './types';
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
@@ -8,72 +8,7 @@ import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 // ============================================================================
-// COMPONENTE DE INPUT DE NOTA (SEM SETAS, ACEITA APENAS DIGITAÇÃO LIVRE DE 0 A 100)
-// ============================================================================
-function NotaInput({ 
-  valorInicial, 
-  onSalvar 
-}: { 
-  valorInicial: string; 
-  onSalvar: (valor: string) => void 
-}) {
-  // Inicializa o estado local exatamente com o que veio do banco (pode ser vazio "")
-  const [valorLocal, setValorLocal] = useState(valorInicial ?? '');
-  const refInicial = useRef(valorInicial);
-
-  // Sincroniza o valor caso mude de aluno ou de capacidade técnica no diário
-  if (refInicial.current !== valorInicial) {
-    refInicial.current = valorInicial;
-    setValorLocal(valorInicial ?? '');
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let limpo = e.target.value.replace(/\D/g, ''); // Permite apenas números inteiros, remove letras/sinais
-    
-    if (limpo !== '') {
-      const num = parseInt(limpo, 10);
-      if (num > 100) {
-        limpo = '100'; // Não permite passar de 100
-      }
-    }
-    
-    // Atualiza apenas a memória local da digitação (Impede travar em 1 dígito)
-    setValorLocal(limpo);
-  };
-
-  const handleBlur = () => {
-    // Grava de forma definitiva no Firebase apenas quando o instrutor sai do campo
-    if (valorLocal !== valorInicial) {
-      onSalvar(valorLocal);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      if (valorLocal !== valorInicial) {
-        onSalvar(valorLocal);
-      }
-      (e.target as HTMLInputElement).blur(); // Remove o foco da caixa ao dar Enter
-    }
-  };
-
-  return (
-    <input 
-      type="text" 
-      inputMode="numeric"
-      pattern="[0-9]*"
-      value={valorLocal} 
-      onChange={handleChange} 
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      placeholder="" // Deixa o campo totalmente limpo se não houver nota
-      className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner" 
-    />
-  );
-}
-
-// ============================================================================
-// COMPONENTE PRINCIPAL
+// COMPONENTE PRINCIPAL DO SISTEMA
 // ============================================================================
 export default function App() {
   // Estados para o Controle de Acesso (Login)
@@ -191,20 +126,8 @@ export default function App() {
     }
   };
 
+  // ENVIO DE NOTA TOTALMENTE ISOLADO DO CICLO DE DIGITAÇÃO DE TELA
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorLimpo: string) => {
-    setAlunos(prev => prev.map(a => {
-      if (a.id === alunoId) {
-        return {
-          ...a,
-          notasNumericas: {
-            ...(a.notasNumericas || {}),
-            [capacidadeId]: valorLimpo
-          }
-        };
-      }
-      return a;
-    }));
-
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`notasNumericas.${capacidadeId}`]: valorLimpo
@@ -407,7 +330,7 @@ export default function App() {
                       const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
                       
                       return (
-                        <div key={aluno.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
+                        <div key={`${aluno.id}-${capSelecionada.id}`} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-4">
                               <div>
@@ -429,11 +352,40 @@ export default function App() {
                                   </button>
                                 ))}
                               </div>
+                              
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
-                                <NotaInput 
-                                  valorInicial={notaNum} 
-                                  onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, novoValor)} 
+                                
+                                {/* SOLUÇÃO INÉDITA E BLINDADA:
+                                    Sem setas cursoras, sem input controlado travando sua digitação por causa de estados paralelos.
+                                    Lê o valor direto do banco ao renderizar e permite digitação fluida e livre de 0 a 100.
+                                */}
+                                <input 
+                                  key={`input-${aluno.id}-${capSelecionada.id}`}
+                                  type="text" 
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  defaultValue={notaNum}
+                                  placeholder="" 
+                                  className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner [appearance:textfield] [&::-webkit-outer-spin-button]:margin-0 [&::-webkit-inner-spin-button]:margin-0" 
+                                  onChange={(e) => {
+                                    let limpo = e.target.value.replace(/\D/g, ''); // Garante apenas dígitos numéricos
+                                    if (limpo !== '') {
+                                      const num = parseInt(limpo, 10);
+                                      if (num > 100) limpo = '100'; // Trava o teto em 100
+                                    }
+                                    e.target.value = limpo; // Altera no elemento HTML na hora sem travar foco
+                                  }}
+                                  onBlur={(e) => {
+                                    // Só dispara a gravação no Firebase quando você sai do campo
+                                    handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleMudarNotaNumerica(aluno.id, capSelecionada.id, (e.target as HTMLInputElement).value);
+                                      (e.target as HTMLInputElement).blur(); // Tira o foco ao teclar Enter
+                                    }
+                                  }}
                                 />
                               </div>
                             </div>
