@@ -7,7 +7,7 @@ import CapacidadeCard from './components/CapacidadeCard';
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// COMPONENTE ISOLADO: Garante que a digitação seja instantânea, fluida e não sofra interferência do Firebase
+// COMPONENTE DE INPUT BLINDADO: Mantém a digitação na memória local de forma totalmente isolada
 function NotaInput({ 
   valorInicial, 
   onSalvar 
@@ -17,18 +17,18 @@ function NotaInput({
 }) {
   const [valorLocal, setValorLocal] = useState(valorInicial);
 
-  // Sincroniza se o valor mudar externamente (ex: mudar de aluno ou turma)
+  // Sincroniza se o valor mudar externamente (ex: mudar de aluno ou de capacidade)
   useEffect(() => {
     setValorLocal(valorInicial);
   }, [valorInicial]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let limpo = e.target.value.replace(/\D/g, ''); // Remove tudo o que não for número
+    let limpo = e.target.value.replace(/\D/g, ''); // Permite apenas números inteiros
     
     if (limpo !== '') {
       const num = parseInt(limpo, 10);
       if (num > 100) {
-        limpo = '100'; // Trava o limite superior em 100
+        limpo = '100'; // Define o teto máximo em 100
       }
     }
     
@@ -36,13 +36,13 @@ function NotaInput({
   };
 
   const handleBlur = () => {
-    onSalvar(valorLocal); // Grava no Firebase apenas quando o utilizador sai do campo
+    onSalvar(valorLocal); // Envia o dado para o Firebase apenas quando sai do campo
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       onSalvar(valorLocal);
-      (e.target as HTMLInputElement).blur(); // Remove o foco ao carregar em Enter
+      (e.target as HTMLInputElement).blur(); // Tira o foco ao pressionar Enter
     }
   };
 
@@ -177,7 +177,6 @@ export default function App() {
     }
   };
 
-  // Função otimizada para salvar de forma segura e direta no banco de dados
   const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorLimpo: string) => {
     const alunoAlvo = alunos.find(a => a.id === alunoId);
     if (!alunoAlvo) return;
@@ -187,7 +186,6 @@ export default function App() {
       [capacidadeId]: valorLimpo
     };
 
-    // Atualização otimista local
     setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, notasNumericas: novasNotasNumericas } : a));
 
     try {
@@ -413,7 +411,6 @@ export default function App() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
-                                {/* USO DO NOVO COMPONENTE DE INPUT INDEPENDENTE */}
                                 <NotaInput 
                                   valorInicial={notaNum} 
                                   onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, novoValor)} 
@@ -424,7 +421,8 @@ export default function App() {
 
                           <div>
                             <label className="text-[10px] font-black text-slate-400 block tracking-wider uppercase mb-1">Evidências / Observações de Desempenho</label>
-                            <textarea value={textoObs} onChange={(e) => handleMudarObservation(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
+                            {/* NOME DA FUNÇÃO CORRIGIDO DE handleMudarObservation PARA handleMudarObservacao */}
+                            <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
                             {nivelAtual && <p className="text-[10px] text-slate-400 font-bold italic mt-1">Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capSelecionada.id, nivelAtual)}</span></p>}
                           </div>
                         </div>
@@ -515,7 +513,7 @@ export default function App() {
                 <tr>
                   <td style={{ verticalAlign: 'top' }}>
                     <div style={{ backgroundColor: '#dc2626', color: '#ffffff', fontWeight: '900', display: 'inline-block', padding: '6px 16px', fontSize: '18px', fontStyle: 'italic', letterSpacing: '-1px' }}>SENAI</div>
-                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', color: '#004fa3', margin: '10px 0 4px 0' }}>Pauta de Evaluation por Capacidades Sociais e Técnicas</h2>
+                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', color: '#004fa3', margin: '10px 0 4px 0' }}>Pauta de Avaliação por Capacidades Sociais e Técnicas</h2>
                     <p style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', margin: 0 }}>Habilitação Profissional: Mecânico de Usinagem Convencional</p>
                   </td>
                   <td style={{ textAlign: 'right', verticalAlign: 'top', width: '150px' }}>
