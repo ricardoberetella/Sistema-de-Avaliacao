@@ -242,17 +242,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
-      {/* CSS GLOBAL PARA ELIMINAR AS SETAS LATERAIS DO INPUT DE NÚMERO */}
       <style>{`
         #relatorio-pdf-container { display: none; }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type=number] {
-          -moz-appearance: textfield;
-        }
         @media print {
           .conteudo-tela { display: none !important; }
           body { background-color: #ffffff !important; }
@@ -376,26 +367,27 @@ export default function App() {
                                 
                                 <input
                                   type="text"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  defaultValue={notaNum}
-                                  key={`${aluno.id}-${capSelecionada.id}-${notaNum}`}
                                   placeholder="Ex: 85"
+                                  defaultValue={notaNum}
                                   className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner"
-                                  onChange={(e) => {
+                                  onBlur={(e) => {
                                     let limpo = e.target.value.replace(/\D/g, '');
                                     if (limpo !== '') {
                                       const num = parseInt(limpo, 10);
                                       if (num > 100) limpo = '100';
                                     }
                                     e.target.value = limpo;
-                                  }}
-                                  onBlur={(e) => {
-                                    handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value);
+                                    handleMudarNotaNumerica(aluno.id, capSelecionada.id, limpo);
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                      handleMudarNotaNumerica(aluno.id, capSelecionada.id, (e.target as HTMLInputElement).value);
+                                      let limpo = (e.target as HTMLInputElement).value.replace(/\D/g, '');
+                                      if (limpo !== '') {
+                                        const num = parseInt(limpo, 10);
+                                        if (num > 100) limpo = '100';
+                                      }
+                                      (e.target as HTMLInputElement).value = limpo;
+                                      handleMudarNotaNumerica(aluno.id, capSelecionada.id, limpo);
                                       (e.target as HTMLInputElement).blur();
                                     }
                                   }}
@@ -406,7 +398,7 @@ export default function App() {
 
                           <div>
                             <label className="text-[10px] font-black text-slate-400 block tracking-wider uppercase mb-1">Evidências / Observações de Desempenho</label>
-                            <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
+                            <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
                             {nivelAtual && <p className="text-[10px] text-slate-400 font-bold italic mt-1">Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capSelecionada.id, nivelAtual)}</span></p>}
                           </div>
                         </div>
