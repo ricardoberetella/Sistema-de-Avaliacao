@@ -123,37 +123,14 @@ export default function App() {
     }
   };
 
-  const handleMudarNotaNumerica = async (alunoId: string, capacidadeId: string, valorLimpo: string) => {
-    setAlunos(prev => prev.map(a => {
-      if (a.id === alunoId) {
-        return {
-          ...a,
-          notasNumericas: {
-            ...(a.notasNumericas || {}),
-            [capacidadeId]: valorLimpo
-          }
-        };
-      }
-      return a;
-    }));
-
-    try {
-      await updateDoc(doc(db, 'alunos', alunoId), {
-        [`notasNumericas.${capacidadeId}`]: valorLimpo
-      });
-    } catch (error) {
-      console.error("Erro ao salvar nota numérica:", error);
-    }
-  };
-
-  const handleMudarObservacao = async (alunoId: string, capacidadeId: string, texto: string) => {
+  const handleMudarObservacao = async (alunoId: string, capacidadId: string, texto: string) => {
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
         return {
           ...a,
           observacoes: {
             ...(a.observacoes || {}),
-            [capacidadeId]: texto
+            [capacidadId]: texto
           }
         };
       }
@@ -162,7 +139,7 @@ export default function App() {
 
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
-        [`observacoes.${capacidadeId}`]: texto
+        [`observacoes.${capacidadId}`]: texto
       });
     } catch (error) {
       console.error("Erro ao salvar observação:", error);
@@ -332,10 +309,7 @@ export default function App() {
                   ) : (
                     alunosDaTurma.map((aluno) => {
                       const mapaAvaliacoes = aluno.avaliacoes || {};
-                      const mapaNotas = aluno.notasNumericas || {};
-                      
                       const nivelAtual = mapaAvaliacoes[capSelecionada.id];
-                      const notaNum = mapaNotas[capSelecionada.id] || '';
                       const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
                       
                       return (
@@ -360,38 +334,6 @@ export default function App() {
                                     {nivel}
                                   </button>
                                 ))}
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
-                                
-                                <input
-                                  type="text"
-                                  placeholder="Ex: 85"
-                                  defaultValue={notaNum}
-                                  className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner"
-                                  onBlur={(e) => {
-                                    let limpo = e.target.value.replace(/\D/g, '');
-                                    if (limpo !== '') {
-                                      const num = parseInt(limpo, 10);
-                                      if (num > 100) limpo = '100';
-                                    }
-                                    e.target.value = limpo;
-                                    handleMudarNotaNumerica(aluno.id, capSelecionada.id, limpo);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      let limpo = (e.target as HTMLInputElement).value.replace(/\D/g, '');
-                                      if (limpo !== '') {
-                                        const num = parseInt(limpo, 10);
-                                        if (num > 100) limpo = '100';
-                                      }
-                                      (e.target as HTMLInputElement).value = limpo;
-                                      handleMudarNotaNumerica(aluno.id, capSelecionada.id, limpo);
-                                      (e.target as HTMLInputElement).blur();
-                                    }
-                                  }}
-                                />
                               </div>
                             </div>
                           </div>
@@ -515,19 +457,15 @@ export default function App() {
                     <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>{aluno.nome}</td>
                     {capacidadesFiltradas.map(c => {
                       const seguroAvaliacoes = aluno.avaliacoes || {};
-                      const seguroNotasNum = aluno.notasNumericas || {};
-                      
                       const v = seguroAvaliacoes[c.id] || '-';
-                      const notaNumSalva = seguroNotasNum[c.id] || '';
                       
-                      const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
                       const isPar = v === 'PAR';
                       const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
                       const corFundo = v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : '#ffffff';
 
                       return (
                         <td key={c.id} className={isPar ? 'rubrica-azul-impressao' : ''} style={{ border: '1px solid #cbd5e1', padding: '7px 8px', textAlign: 'center', fontWeight: 'bold', color: corTexto, backgroundColor: corFundo }}>
-                          {exibicaoCelula}
+                          {v}
                         </td>
                       );
                     })}
