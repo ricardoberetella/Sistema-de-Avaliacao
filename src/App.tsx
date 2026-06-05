@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './types';
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
@@ -242,13 +242,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
-      {/* CSS INJETADO PARA REMOVER SETINHAS DE NÚMERO DE QUALQUER NAVEGADOR (CHROME, SAFARI, FIREFOX) */}
+      {/* CSS GLOBAL PARA ELIMINAR AS SETAS LATERAIS DO INPUT DE NÚMERO */}
       <style>{`
         #relatorio-pdf-container { display: none; }
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-          -webkit-appearance: none; 
-          margin: 0; 
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
         }
         input[type=number] {
           -moz-appearance: textfield;
@@ -344,7 +344,7 @@ export default function App() {
                       const mapaNotas = aluno.notasNumericas || {};
                       
                       const nivelAtual = mapaAvaliacoes[capSelecionada.id];
-                      const notaNum = mapaNotas[capSelecionada.id] ?? '';
+                      const notaNum = mapaNotas[capSelecionada.id] || '';
                       const textoObs = (aluno.observacoes && aluno.observacoes[capSelecionada.id]) || '';
                       
                       return (
@@ -374,17 +374,15 @@ export default function App() {
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Nota Numérica (0-100):</span>
                                 
-                                {/* LÓGICA TOTALMENTE NOVA: INPUT INCONTROLADO POR REF (NATIVO DO NAVEGADOR) */}
                                 <input
                                   type="text"
                                   inputMode="numeric"
                                   pattern="[0-9]*"
                                   defaultValue={notaNum}
-                                  key={`${aluno.id}-${capSelecionada.id}-${notaNum}`} // Garante atualização se o banco mudar lá fora
+                                  key={`${aluno.id}-${capSelecionada.id}-${notaNum}`}
                                   placeholder="Ex: 85"
                                   className="w-16 h-8 px-2 bg-slate-50 text-slate-800 text-center font-black border border-slate-300 rounded-lg focus:outline-none focus:bg-white focus:border-blue-500 text-xs shadow-inner"
                                   onChange={(e) => {
-                                    // Limpeza em tempo real apenas para proibir letras, sem tocar no estado reativo do React
                                     let limpo = e.target.value.replace(/\D/g, '');
                                     if (limpo !== '') {
                                       const num = parseInt(limpo, 10);
@@ -393,7 +391,6 @@ export default function App() {
                                     e.target.value = limpo;
                                   }}
                                   onBlur={(e) => {
-                                    // Só grava no Firebase quando você sai do campo de texto
                                     handleMudarNotaNumerica(aluno.id, capSelecionada.id, e.target.value);
                                   }}
                                   onKeyDown={(e) => {
@@ -409,7 +406,7 @@ export default function App() {
 
                           <div>
                             <label className="text-[10px] font-black text-slate-400 block tracking-wider uppercase mb-1">Evidências / Observações de Desempenho</label>
-                            <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
+                            <textarea value={textoObs} onChange={(e) => handleMudarObservacao(aluno.id, capSelecionada.id, e.target.value)} placeholder="Descreva pontos de atenção ou conquests do estudante nesta capacidade técnica..." className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" />
                             {nivelAtual && <p className="text-[10px] text-slate-400 font-bold italic mt-1">Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capSelecionada.id, nivelAtual)}</span></p>}
                           </div>
                         </div>
@@ -511,4 +508,44 @@ export default function App() {
               </tbody>
             </table>
 
-            <table style={{ width: '100%', borderCollapse: '
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f5f9', color: '#334155', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'left', width: '25%' }}>Nome do Aluno</th>
+                  {capacidadesFiltradas.map(c => (
+                    <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{c.codigo}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {alunosDaTurma.map(aluno => (
+                  <tr key={aluno.id} style={{ textTransform: 'uppercase' }}>
+                    <td style={{ border: '1px solid #cbd5e1', padding: '7px 8px', fontWeight: 'bold', color: '#0f172a' }}>{aluno.nome}</td>
+                    {capacidadesFiltradas.map(c => {
+                      const seguroAvaliacoes = aluno.avaliacoes || {};
+                      const seguroNotasNum = aluno.notasNumericas || {};
+                      
+                      const v = seguroAvaliacoes[c.id] || '-';
+                      const notaNumSalva = seguroNotasNum[c.id] || '';
+                      
+                      const exibicaoCelula = notaNumSalva ? `${v} (${notaNumSalva})` : v;
+                      const isPar = v === 'PAR';
+                      const corTexto = v === 'NSA' ? '#b91c1c' : v === 'APO' ? '#b45309' : isPar ? '#1d4ed8' : v === 'AUT' ? '#047857' : '#94a3b8';
+                      const corFundo = v === 'NSA' ? '#fef2f2' : v === 'APO' ? '#fffbeb' : v === 'PAR' ? '#eff6ff' : v === 'AUT' ? '#ecfdf5' : '#ffffff';
+
+                      return (
+                        <td key={c.id} className={isPar ? 'rubrica-azul-impressao' : ''} style={{ border: '1px solid #cbd5e1', padding: '7px 8px', textAlign: 'center', fontWeight: 'bold', color: corTexto, backgroundColor: corFundo }}>
+                          {exibicaoCelula}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
