@@ -49,7 +49,7 @@ function LinhaAlunoComponent({
             <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Nota (0-100)</span>
             <InputNota 
               valorInicial={valorNota}
-              onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capacidadId, novoValor)}
+              onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capacidadeId, novoValor)}
             />
           </div>
 
@@ -94,5 +94,4 @@ function LinhaAlunoComponent({
   );
 }
 
-// O React.memo impede que mudanças em um aluno forcem a re-renderização dos outros alunos da lista!
 export default React.memo(LinhaAlunoComponent);
