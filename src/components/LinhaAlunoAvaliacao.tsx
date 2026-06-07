@@ -3,7 +3,6 @@ import React from 'react';
 import { Aluno, NivelDesempenho } from '../types';
 import InputNota from './InputNota';
 import TextareaObservacao from './TextareaObservacao';
-import { getDescricaoRubrica } from '../utils';
 
 interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
@@ -63,10 +62,10 @@ function LinhaAlunoComponent({
                   onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, nivel)}
                   className={`px-3 py-2 h-[38px] rounded-xl text-xs font-black transition-all border ${
                     nivelAtual === nivel 
-                      ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600' 
-                      : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500' 
-                      : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600' 
-                      : 'bg-emerald-600 text-white border-emerald-600' 
+                      ? nivel === 'NSA' ? 'bg-red-600 text-white border-red-600' \
+                      : nivel === 'APO' ? 'bg-amber-500 text-white border-amber-500' \
+                      : nivel === 'PAR' ? 'bg-blue-600 text-white border-blue-600' \
+                      : 'bg-emerald-600 text-white border-emerald-600' \
                       : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'
                   }`}
                 >
@@ -84,11 +83,6 @@ function LinhaAlunoComponent({
           valorInicial={textoObs}
           onSalvar={(novoTexto) => handleMudarObservacao(aluno.id, capacidadeId, novoTexto)}
         />
-        {nivelAtual && (
-          <p className="text-[10px] text-slate-400 font-bold italic mt-1">
-            Critério ativo: <span className="text-slate-600">{getDescricaoRubrica(capacidadeId, nivelAtual)}</span>
-          </p>
-        )}
       </div>
     </div>
   );
