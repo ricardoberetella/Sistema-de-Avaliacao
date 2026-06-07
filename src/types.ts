@@ -1,6 +1,6 @@
 // src/types.ts
 export type TurmaId = 'MA' | 'MB' | 'TA' | 'TB';
-export type UCId = 'FUSI' | 'CRD' | 'LIDT' | 'CIEMA'; // Alterado de CMAT para CIEMA para bater com o App.tsx
+export type UCId = 'FUSI' | 'CRD' | 'LIDT' | 'CIEMA';
 
 export interface CapacidadeTecnica {
   id: string;
@@ -13,13 +13,13 @@ export interface Aluno {
   id: string;
   nome: string;
   turmaId: TurmaId;
-  avaliacoes?: {                  // Adicionado o ? para torná-lo opcional e evitar erros se o Firestore retornar vazio
+  avaliacoes?: {
     [capacidadeId: string]: NivelDesempenho;
   };
-  observacoes?: {                 // Adicionado o ?
+  observacoes?: {
     [capacidadeId: string]: string;
   };
-  notasNumericas?: {              // ESSA LINHA FOI ADICIONADA PARA CURAR O ERRO DA BUILD!
+  notasNumericas?: {
     [capacidadeId: string]: string;
   };
 }
