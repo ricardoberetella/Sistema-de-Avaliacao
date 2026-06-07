@@ -12,7 +12,10 @@ export default function InputNota({
   const [valor, setValor] = useState('');
 
   useEffect(() => {
-    setValor(valorInicial || '');
+    setValor((atual) => {
+      if (atual === valorInicial) return atual;
+      return valorInicial || '';
+    });
   }, [valorInicial]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,19 +45,23 @@ export default function InputNota({
     const textoFinal = String(limitado).replace('.', ',');
 
     setValor(textoFinal);
-    onSalvar(textoFinal);
+
+    if (textoFinal !== valorInicial) {
+      onSalvar(textoFinal);
+    }
   };
 
   return (
     <input
       type="text"
-      inputMode="numeric"
+      inputMode="decimal"
       value={valor}
       onChange={handleChange}
       onBlur={salvar}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           salvar();
+          (e.target as HTMLInputElement).blur();
         }
       }}
       placeholder="0"
