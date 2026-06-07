@@ -198,7 +198,7 @@ export default function App() {
             <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic text-white inline-block mb-4 shadow">
               SENAI
             </div>
-            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Evaluation</h2>
+            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Avaliação</h2>
             <p className="text-blue-200 text-xs mt-1 font-bold">Mecânico de Usinagem Convencional</p>
           </div>
 
