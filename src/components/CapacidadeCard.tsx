@@ -14,7 +14,7 @@ interface CapacidadeCardProps {
   onClick: () => void;
 }
 
-function CapacidadeCardComponent({ capacidade, contagemRubricas, totalAlunos, onClick }: CapacidadeCardProps) {
+function CapacidadeCard({ capacidade, contagemRubricas, totalAlunos, onClick }: CapacidadeCardProps) {
   const avaliados = contagemRubricas.NSA + contagemRubricas.APO + contagemRubricas.PAR + contagemRubricas.AUT;
   const porcentagem = totalAlunos > 0 ? Math.round((avaliados / totalAlunos) * 100) : 0;
 
@@ -53,5 +53,4 @@ function CapacidadeCardComponent({ capacidade, contagemRubricas, totalAlunos, on
   );
 }
 
-// O memo evita re-renderizações desnecessárias dos cards em segundo plano
-export default React.memo(CapacidadeCardComponent);
+export default React.memo(CapacidadeCard);
