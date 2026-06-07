@@ -3,66 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { TurmaId, UCId, Aluno, CapacidadeTecnica, NivelDesempenho } from './types';
 import { CAPACIDADES_OFICIAIS, getDescricaoRubrica } from './utils';
 import CapacidadeCard from './components/CapacidadeCard';
+import InputNota from './components/InputNota';
+import TextareaObservacao from './components/TextareaObservacao';
 
 import { db } from './firebase';
 import { collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-
-// COMPONENTE ISOLADO PARA A NOTA NUMÉRICA
-function InputNota({ 
-  valorInicial, 
-  onSalvar 
-}: { 
-  valorInicial: string; 
-  onSalvar: (val: string) => void 
-}) {
-  const [localVal, setLocalVal] = useState(valorInicial);
-
-  useEffect(() => {
-    setLocalVal(valorInicial);
-  }, [valorInicial]);
-
-  return (
-    <input 
-      type="text" 
-      value={localVal} 
-      onChange={(e) => setLocalVal(e.target.value)}
-      onBlur={() => onSalvar(localVal)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          onSalvar(localVal);
-          (e.target as HTMLInputElement).blur();
-        }
-      }}
-      placeholder="Ex: 85" 
-      className="w-16 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none transition-all shadow-inner"
-    />
-  );
-}
-
-// COMPONENTE ISOLADO PARA AS OBSERVAÇÕES/EVIDÊNCIAS
-function TextareaObservacao({ 
-  valorInicial, 
-  onSalvar 
-}: { 
-  valorInicial: string; 
-  onSalvar: (val: string) => void 
-}) {
-  const [localText, setLocalText] = useState(valorInicial);
-
-  useEffect(() => {
-    setLocalText(valorInicial);
-  }, [valorInicial]);
-
-  return (
-    <textarea 
-      value={localText} 
-      onChange={(e) => setLocalText(e.target.value)}
-      onBlur={() => onSalvar(localText)}
-      placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..." 
-      className="w-full p-3 bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-xl text-xs focus:outline-none focus:bg-white focus:border-blue-400 transition-all min-h-[70px] placeholder-slate-400" 
-    />
-  );
-}
 
 export default function App() {
   const [senhaInput, setSenhaInput] = useState('');
@@ -368,7 +313,6 @@ export default function App() {
                             <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 shrink-0">
                               <div className="flex flex-col items-start">
                                 <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Nota (0-100)</span>
-                                {/* COMPONENTE BLINDADO CONTRA PERDA DE FOCO */}
                                 <InputNota 
                                   valorInicial={valorNota}
                                   onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, novoValor)}
@@ -394,7 +338,6 @@ export default function App() {
 
                           <div>
                             <label className="text-[10px] font-black text-slate-400 block mb-1">Evidências / Observações</label>
-                            {/* COMPONENTE BLINDADO PARA TEXTAREA */}
                             <TextareaObservacao 
                               valorInicial={textoObs}
                               onSalvar={(novoTexto) => handleMudarObservacao(aluno.id, capSelecionada.id, novoTexto)}
@@ -414,13 +357,12 @@ export default function App() {
             </div>
           )}
 
-          {/* MODAL GRÁFICOS */}
           {verGraficos && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
               <div className="bg-white w-full max-w-xl rounded-[24px] shadow-2xl overflow-hidden">
                 <div className="p-6 bg-[#004fa3] text-white flex justify-between items-center">
                   <h3 className="text-sm font-black uppercase">📊 Desempenho Consolidado - Turma {turmaAtiva}</h3>
-                  <button onClick={() => setVerGraficos(false)} className="text-white/80 font-black text-sm">✕</button>
+                  <button onClick={() => setVerGraficos(false)} className="text-white/80 hover:text-white font-black text-sm">✕</button>
                 </div>
                 <div className="p-6 space-y-5 bg-white">
                   {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
@@ -444,7 +386,6 @@ export default function App() {
         </main>
       </div>
 
-      {/* IMPRESSÃO */}
       <div id="relatorio-pdf-container">
         <div style={{ padding: '20px', backgroundColor: '#ffffff' }}>
           <h2 style={{ color: '#004fa3' }}>SENAI - Pauta de Avaliação ({turmaAtiva})</h2>
