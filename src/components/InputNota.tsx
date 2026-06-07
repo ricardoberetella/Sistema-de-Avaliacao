@@ -7,23 +7,19 @@ interface InputNotaProps {
 }
 
 export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
-  // Mantém o controle total do que está sendo digitado localmente sem travar
   const [localVal, setLocalVal] = useState(valorInicial);
 
-  // Sincroniza o valor caso você mude de turma ou selecione outra capacidade
   useEffect(() => {
     setLocalVal(valorInicial);
   }, [valorInicial]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Permite apenas números dentro do campo
     const apenasNumeros = e.target.value.replace(/\D/g, '');
     setLocalVal(apenasNumeros);
   };
 
   return (
     <div className="relative">
-      {/* Estilo embutido para garantir a remoção de qualquer seta de número residual */}
       <style>{`
         .input-nota-blindado::-webkit-outer-spin-button,
         .input-nota-blindado::-webkit-inner-spin-button {
@@ -42,13 +38,11 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
         value={localVal} 
         onChange={handleChange}
         onBlur={() => {
-          // Só envia para o banco de dados se o valor foi alterado de fato
           if (localVal !== valorInicial) {
             onSalvar(localVal);
           }
         }}
         onKeyDown={(e) => {
-          // Ao apertar Enter, salva e remove o foco para aplicar a nota
           if (e.key === 'Enter') {
             if (localVal !== valorInicial) {
               onSalvar(localVal);
