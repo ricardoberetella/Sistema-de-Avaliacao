@@ -1,3 +1,5 @@
+// src/components/InputNota.tsx
+
 import React, { useState } from 'react';
 
 interface InputNotaProps {
@@ -7,40 +9,30 @@ interface InputNotaProps {
 
 export default function InputNota({
   valorInicial,
-  onSalvar
+  onSalvar,
 }: InputNotaProps) {
+  const [valor, setValor] = useState(valorInicial || '');
 
-  const [localVal, setLocalVal] = useState(valorInicial);
+  const salvar = () => {
+    let texto = valor.trim();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let valor = e.target.value;
-
-    valor = valor.replace(/[^0-9,]/g, '');
-
-    const partes = valor.split(',');
-    if (partes.length > 2) return;
-
-    setLocalVal(valor);
-  };
-
-  const executarSalvar = () => {
-    let valor = localVal.trim();
-
-    if (valor === '') {
+    if (texto === '') {
       onSalvar('');
       return;
     }
 
-    let numero = parseFloat(valor.replace(',', '.'));
+    let numero = Number(texto.replace(',', '.'));
 
-    if (isNaN(numero)) return;
+    if (isNaN(numero)) {
+      return;
+    }
 
-    if (numero > 100) numero = 100;
     if (numero < 0) numero = 0;
+    if (numero > 100) numero = 100;
 
     const finalValor = String(numero).replace('.', ',');
 
-    setLocalVal(finalValor);
+    setValor(finalValor);
     onSalvar(finalValor);
   };
 
@@ -48,13 +40,22 @@ export default function InputNota({
     <input
       type="text"
       inputMode="decimal"
-      value={localVal}
-      onChange={handleChange}
-      onBlur={executarSalvar}
+      value={valor}
+      onChange={(e) => {
+        const novo = e.target.value
+          .replace('.', ',')
+          .replace(/[^0-9,]/g, '');
+
+        const partes = novo.split(',');
+
+        if (partes.length > 2) return;
+
+        setValor(novo);
+      }}
+      onBlur={salvar}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
-          executarSalvar();
-          (e.target as HTMLInputElement).blur();
+          salvar();
         }
       }}
       placeholder="0"
