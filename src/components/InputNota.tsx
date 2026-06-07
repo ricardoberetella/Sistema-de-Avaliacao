@@ -1,5 +1,5 @@
 // src/components/InputNota.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 interface InputNotaProps {
   valorInicial: string;
@@ -7,37 +7,58 @@ interface InputNotaProps {
 }
 
 export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
-  const [localVal, setLocalVal] = useState(valorInicial);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Sincroniza o valor do input sempre que o valor inicial vindo do banco mudar
   useEffect(() => {
-    setLocalVal(valorInicial);
+    if (inputRef.current) {
+      inputRef.current.value = valorInicial;
+    }
   }, [valorInicial]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let input = e.target.value;
+  const tratarValidacaoETeclado = (e: React.FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    let val = input.value;
 
-    // 1. Transforma qualquer ponto em vírgula para manter o padrão visual
-    input = input.replace('.', ',');
+    // 1. Converte ponto em vírgula para a visualização
+    val = val.replace('.', ',');
 
-    // 2. Permite apenas números e uma única vírgula acompanhada de até 3 casas decimais
-    // Se o que o usuário digitou não bater com essa regra, a alteração é rejeitada
-    const regexValidacao = /^(100(,0{0,3})?|[0-9]{0,2}(,[0-9]{0,3})?)$/;
-    
-    if (input === '' || regexValidacao.test(input)) {
-      setLocalVal(input);
+    // 2. Remove tudo o que não for número ou vírgula
+    val = val.replace(/[^0-9,]/g, '');
+
+    // 3. Garante apenas uma vírgula no texto todo
+    const partes = val.split(',');
+    if (partes.length > 2) {
+      val = partes[0] + ',' + partes.slice(1).join('');
     }
+
+    // 4. Limita a digitação a no máximo 3 casas decimais
+    if (partes.length === 2 && partes[1].length > 3) {
+      val = partes[0] + ',' + partes[1].substring(0, 3);
+    }
+
+    // 5. Valida matematicamente o teto limite de 100
+    const valorNumerico = parseFloat(val.replace(',', '.'));
+    if (!isNaN(valorNumerico) && valorNumerico > 100) {
+      val = '100';
+    }
+
+    input.value = val;
   };
 
-  const executarSalvar = () => {
-    if (localVal !== valorInicial) {
-      onSalvar(localVal);
+  const dispararSalvar = () => {
+    if (inputRef.current) {
+      const valorFinal = inputRef.current.value;
+      if (valorFinal !== valorInicial) {
+        onSalvar(valorFinal);
+      }
     }
   };
 
   return (
     <div className="relative">
       <style>{`
-        /* Remove setas nativas dos navegadores */
+        /* Remove setas nativas de inputs em todos os navegadores */
         .input-nota-blindado::-webkit-outer-spin-button,
         .input-nota-blindado::-webkit-inner-spin-button {
           -webkit-appearance: none;
@@ -48,19 +69,20 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
         }
       `}</style>
 
-      <input 
-        type="text" 
+      <input
+        ref={inputRef}
+        type="text"
         inputMode="decimal"
-        value={localVal} 
-        onChange={handleChange}
-        onBlur={executarSalvar}
+        defaultValue={valorInicial}
+        onInput={tratarValidacaoETeclado}
+        onBlur={dispararSalvar}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
-            executarSalvar();
-            (e.target as HTMLInputElement).blur();
+            dispararSalvar();
+            e.currentTarget.blur();
           }
         }}
-        placeholder="0,000" 
+        placeholder="0,000"
         className="input-nota-blindado w-24 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none transition-all shadow-inner"
       />
     </div>
