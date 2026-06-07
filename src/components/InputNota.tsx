@@ -1,6 +1,4 @@
-// src/components/InputNota.tsx
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface InputNotaProps {
   valorInicial: string;
@@ -11,47 +9,48 @@ export default function InputNota({
   valorInicial,
   onSalvar,
 }: InputNotaProps) {
-  const [valor, setValor] = useState(valorInicial || '');
+  const [valor, setValor] = useState('');
+
+  useEffect(() => {
+    setValor(valorInicial || '');
+  }, [valorInicial]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let novo = e.target.value;
+
+    novo = novo.replace('.', ',');
+    novo = novo.replace(/[^0-9,]/g, '');
+
+    const partes = novo.split(',');
+    if (partes.length > 2) return;
+
+    setValor(novo);
+  };
 
   const salvar = () => {
-    let texto = valor.trim();
-
-    if (texto === '') {
+    if (valor.trim() === '') {
       onSalvar('');
       return;
     }
 
-    let numero = Number(texto.replace(',', '.'));
+    const numero = parseFloat(valor.replace(',', '.'));
 
-    if (isNaN(numero)) {
-      return;
-    }
+    if (isNaN(numero)) return;
 
-    if (numero < 0) numero = 0;
-    if (numero > 100) numero = 100;
+    const limitado = Math.max(0, Math.min(100, numero));
 
-    const finalValor = String(numero).replace('.', ',');
+    const textoFinal = String(limitado).replace('.', ',');
 
-    setValor(finalValor);
-    onSalvar(finalValor);
+    setValor(textoFinal);
+    onSalvar(textoFinal);
   };
 
   return (
     <input
       type="text"
-      inputMode="decimal"
+      inputMode="numeric"
       value={valor}
-      onChange={(e) => {
-        const novo = e.target.value
-          .replace('.', ',')
-          .replace(/[^0-9,]/g, '');
-
-        const partes = novo.split(',');
-
-        if (partes.length > 2) return;
-
-        setValor(novo);
-      }}
+      onChange={handleChange}
       onBlur={salvar}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
@@ -59,6 +58,8 @@ export default function InputNota({
         }
       }}
       placeholder="0"
+      autoComplete="off"
+      spellCheck={false}
       className="w-24 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none"
     />
   );
