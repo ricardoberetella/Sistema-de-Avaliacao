@@ -37,6 +37,7 @@ export default function App() {
     }
   };
 
+  // Carregamento inicial e sincronização do Firebase
   useEffect(() => {
     if (!autenticado) return;
 
@@ -111,6 +112,9 @@ export default function App() {
       novasAvaliacoes[capacidadeId] = nivel;
     }
 
+    // Otimização: Atualiza o estado local imediatamente para evitar travamentos visuais
+    setAlunos(prev => prev.map(a => a.id === alunoId ? { ...a, avaliacoes: novasAvaliacoes } : a));
+
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         avaliacoes: novasAvaliacoes
@@ -121,6 +125,14 @@ export default function App() {
   };
 
   const handleMudarObservacao = async (alunoId: string, capacidadId: string, texto: string) => {
+    // Otimização: Atualiza o estado local imediatamente
+    setAlunos(prev => prev.map(a => {
+      if (a.id === alunoId) {
+        return { ...a, observacoes: { ...(a.observacoes || {}), [capacidadId]: texto } };
+      }
+      return a;
+    }));
+
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`observacoes.${capacidadId}`]: texto
@@ -131,6 +143,14 @@ export default function App() {
   };
 
   const handleMudarNotaNumerica = async (alunoId: string, capacidadId: string, valor: string) => {
+    // Otimização: Atualiza o estado local imediatamente para blindar o input de texto contra perda de foco
+    setAlunos(prev => prev.map(a => {
+      if (a.id === alunoId) {
+        return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadId]: valor } };
+      }
+      return a;
+    }));
+
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`notasNumericas.${capacidadId}`]: valor
@@ -278,6 +298,7 @@ export default function App() {
             ))}
           </div>
 
+          {/* MODAL ISOLADO DA ÁRVORE PRINCIPAL POR MEIO DE RETORNO CONDICIONAL RESTRITO */}
           {capSelecionada && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
               <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
@@ -300,7 +321,7 @@ export default function App() {
                       const valorNota = (aluno.notasNumericas && aluno.notasNumericas[capSelecionada.id]) || '';
                       
                       return (
-                        <div key={`${aluno.id}-${capSelecionada.id}`} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
+                        <div key={`${aluno.id}`} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-4">
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-4">
                               <div>
@@ -314,6 +335,7 @@ export default function App() {
                               <div className="flex flex-col items-start">
                                 <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Nota (0-100)</span>
                                 <InputNota 
+                                  key={`nota-${aluno.id}-${capSelecionada.id}`}
                                   valorInicial={valorNota}
                                   onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capSelecionada.id, novoValor)}
                                 />
@@ -339,6 +361,7 @@ export default function App() {
                           <div>
                             <label className="text-[10px] font-black text-slate-400 block mb-1">Evidências / Observações</label>
                             <TextareaObservacao 
+                              key={`obs-${aluno.id}-${capSelecionada.id}`}
                               valorInicial={textoObs}
                               onSalvar={(novoTexto) => handleMudarObservacao(aluno.id, capSelecionada.id, novoTexto)}
                             />
@@ -362,7 +385,7 @@ export default function App() {
               <div className="bg-white w-full max-w-xl rounded-[24px] shadow-2xl overflow-hidden">
                 <div className="p-6 bg-[#004fa3] text-white flex justify-between items-center">
                   <h3 className="text-sm font-black uppercase">📊 Desempenho Consolidado - Turma {turmaAtiva}</h3>
-                  <button onClick={() => setVerGraficos(false)} className="text-white/80 hover:text-white font-black text-sm">✕</button>
+                  <button onClick={() => setVerGraficos(false)} className="text-white/80 font-black text-sm">✕</button>
                 </div>
                 <div className="p-6 space-y-5 bg-white">
                   {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
