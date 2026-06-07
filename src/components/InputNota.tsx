@@ -14,6 +14,7 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
   }, [valorInicial]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Permite apenas números de 0 a 9
     const apenasNumeros = e.target.value.replace(/\D/g, '');
     setLocalVal(apenasNumeros);
   };
@@ -21,6 +22,7 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
   return (
     <div className="relative">
       <style>{`
+        /* Remove as setinhas nativas de inputs numéricos no Chrome, Safari, Edge e Firefox */
         .input-nota-blindado::-webkit-outer-spin-button,
         .input-nota-blindado::-webkit-inner-spin-button {
           -webkit-appearance: none;
