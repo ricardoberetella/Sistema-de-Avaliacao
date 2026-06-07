@@ -16,35 +16,19 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let input = e.target.value;
 
-    // 1. Padroniza transformando ponto do teclado numérico em vírgula visual
+    // 1. Transforma qualquer ponto em vírgula para manter o padrão visual
     input = input.replace('.', ',');
 
-    // 2. Remove de imediato qualquer caractere que não seja número ou a própria vírgula
-    input = input.replace(/[^0-9,]/g, '');
-
-    // 3. Bloqueia a inserção de mais de uma vírgula
-    const partes = input.split(',');
-    if (partes.length > 2) {
-      input = partes[0] + ',' + partes.slice(1).join('');
+    // 2. Permite apenas números e uma única vírgula acompanhada de até 3 casas decimais
+    // Se o que o usuário digitou não bater com essa regra, a alteração é rejeitada
+    const regexValidacao = /^(100(,0{0,3})?|[0-9]{0,2}(,[0-9]{0,3})?)$/;
+    
+    if (input === '' || regexValidacao.test(input)) {
+      setLocalVal(input);
     }
-
-    // 4. Regra Matemática Estrita: Corta qualquer dígito que passe de 3 casas decimais
-    if (partes.length === 2 && partes[1].length > 3) {
-      input = partes[0] + ',' + partes[1].substring(0, 3);
-    }
-
-    // 5. Validação Lógica de Faixa (0 a 100):
-    // Converte temporariamente para float usando ponto para validar o limite real
-    const valorNumerico = parseFloat(input.replace(',', '.'));
-    if (!isNaN(valorNumerico) && valorNumerico > 100) {
-      input = '100';
-    }
-
-    setLocalVal(input);
   };
 
   const executarSalvar = () => {
-    // Só envia para o Firebase se o valor de fato foi alterado
     if (localVal !== valorInicial) {
       onSalvar(localVal);
     }
@@ -53,7 +37,7 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
   return (
     <div className="relative">
       <style>{`
-        /* Remove de forma definitiva e absoluta as setas nativas dos navegadores */
+        /* Remove setas nativas dos navegadores */
         .input-nota-blindado::-webkit-outer-spin-button,
         .input-nota-blindado::-webkit-inner-spin-button {
           -webkit-appearance: none;
