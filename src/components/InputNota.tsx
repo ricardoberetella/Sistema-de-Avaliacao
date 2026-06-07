@@ -9,7 +9,7 @@ interface InputNotaProps {
 export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
   const [localVal, setLocalVal] = useState(valorInicial);
 
-  // Sincroniza o componente caso o valor vindo do Firebase mude externamente
+  // Mantém o campo atualizado se os dados mudarem no banco de dados
   useEffect(() => {
     setLocalVal(valorInicial);
   }, [valorInicial]);
@@ -17,15 +17,14 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let input = e.target.value;
 
-    // 1. Permite o ponto ou a vírgula para não travar teclados numéricos de telemóveis/computadores
+    // 1. Substitui ponto por vírgula para manter o padrão visual do teclado numérico
     input = input.replace('.', ',');
 
     // 2. Permite digitar livremente apenas números e uma única vírgula
-    // (Impede letras ou segundas vírgulas de entrarem no estado e quebrarem o fluxo)
     const partes = input.split(',');
     if (partes.length > 2) return; 
 
-    // Remove qualquer caracter inválido
+    // Remove qualquer caractere que não seja número ou vírgula
     const filtrado = input.replace(/[^0-9,]/g, '');
     setLocalVal(filtrado);
   };
@@ -36,7 +35,7 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
       return;
     }
 
-    // Converte temporariamente para formato numérico padrão (ponto) para validação matemática
+    // Converte temporariamente para ponto para fazer as validações matemáticas do JavaScript
     let stringParaFloat = localVal.replace(',', '.');
     let numero = parseFloat(stringParaFloat);
 
@@ -45,21 +44,18 @@ export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
       return;
     }
 
-    // 3. Validação estrita do limite superior: não permite passar de 100
-    if (numero > 100) {
-      numero = 100;
-    }
-    // 4. Validação estrita do limite inferior: não permite notas negativas
-    if (numero < 0) {
-      numero = 0;
-    }
+    // 3. Validação do limite superior (Teto de 100)
+    if (numero > 100) numero = 100;
+    
+    // 4. Validação do limite inferior (Sem notas negativas)
+    if (numero < 0) numero = 0;
 
-    // 5. Ajusta para string limitando a no máximo 3 casas decimais matematicamente
-    // Se for um número inteiro (ex: 85), mantém limpo como "85". Se for decimal, limita a 3 casas.
+    // 5. Arredonda e limita a no máximo 3 casas decimais usando lógica matemática estável
     let valorFinalString = String(Number(numero.toFixed(3))).replace('.', ',');
 
     setLocalVal(valorFinalString);
 
+    // Só envia para o Firebase se o valor realmente mudou
     if (valorFinalString !== valorInicial) {
       onSalvar(valorFinalString);
     }
