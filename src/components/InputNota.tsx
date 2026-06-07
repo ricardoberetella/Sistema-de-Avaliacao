@@ -12,13 +12,12 @@ export default function InputNota({
   const [valor, setValor] = useState('');
 
   useEffect(() => {
-    setValor((atual) => {
-      if (atual === valorInicial) return atual;
-      return valorInicial || '';
-    });
+    setValor(valorInicial || '');
   }, [valorInicial]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('ANTES:', e.target.value);
+
     let novo = e.target.value;
 
     novo = novo.replace('.', ',');
@@ -26,6 +25,8 @@ export default function InputNota({
 
     const partes = novo.split(',');
     if (partes.length > 2) return;
+
+    console.log('DEPOIS:', novo);
 
     setValor(novo);
   };
@@ -45,23 +46,19 @@ export default function InputNota({
     const textoFinal = String(limitado).replace('.', ',');
 
     setValor(textoFinal);
-
-    if (textoFinal !== valorInicial) {
-      onSalvar(textoFinal);
-    }
+    onSalvar(textoFinal);
   };
 
   return (
     <input
       type="text"
-      inputMode="decimal"
+      inputMode="numeric"
       value={valor}
       onChange={handleChange}
       onBlur={salvar}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           salvar();
-          (e.target as HTMLInputElement).blur();
         }
       }}
       placeholder="0"
