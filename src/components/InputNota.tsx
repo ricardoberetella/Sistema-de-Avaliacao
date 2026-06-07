@@ -61,7 +61,7 @@ export default function InputNota({
           salvar();
         }
       }}
-      placeholder="0"
+      placeholder="teste123"
       autoComplete="off"
       spellCheck={false}
       className="w-24 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none"
