@@ -51,6 +51,7 @@ export default function App() {
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
           observacoes: dados.observacoes || {},
+          notesNumericas: dados.notesNumericas || {}, // Mantido por compatibilidade histórica se houver
           notasNumericas: dados.notasNumericas || {}
         });
       });
@@ -96,18 +97,24 @@ export default function App() {
   }, []);
 
   const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
+    // Atualiza apenas a avaliação por critérios (rubricas), preservando intocadas as notas de 0 a 100
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
         const mapAvaliacoes = a.avaliacoes || {};
         const notaAtual = mapAvaliacoes[capacidadeId];
         const novaNota = notaAtual === nivel ? null : nivel;
         const novasAvaliacoes = { ...mapAvaliacoes };
+        
         if (novaNota === null) {
           delete novasAvaliacoes[capacidadeId];
         } else {
           novasAvaliacoes[capacidadeId] = nivel;
         }
-        return { ...a, avaliacoes: novasAvaliacoes };
+        
+        return { 
+          ...a, 
+          avaliacoes: novasAvaliacoes 
+        };
       }
       return a;
     }));
@@ -139,6 +146,7 @@ export default function App() {
   }, []);
 
   const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
+    // Trata limpeza do campo
     if (valor === '') {
       setAlunos(prev => prev.map(a => {
         if (a.id === alunoId) {
@@ -157,28 +165,20 @@ export default function App() {
       return;
     }
 
-    const apenasNumeros = valor.replace(/\D/g, '');
-    if (apenasNumeros === '') return;
-
-    const numValue = parseInt(apenasNumeros, 10);
-
-    if (numValue >= 0 && numValue <= 100) {
-      const valorFinal = numValue.toString();
-
-      setAlunos(prev => prev.map(a => {
-        if (a.id === alunoId) {
-          return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valorFinal } };
-        }
-        return a;
-      }));
-
-      try {
-        await updateDoc(doc(db, 'alunos', alunoId), {
-          [`notasNumericas.${capacidadeId}`]: valorFinal
-        });
-      } catch (error) {
-        console.error("Erro ao salvar valor da nota:", error);
+    // Salva o valor puro (0-100) vindo do InputNota sem misturar com índices de rubricas
+    setAlunos(prev => prev.map(a => {
+      if (a.id === alunoId) {
+        return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valor } };
       }
+      return a;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'alunos', alunoId), {
+        [`notasNumericas.${capacidadeId}`]: valor
+      });
+    } catch (error) {
+      console.error("Erro ao salvar valor da nota:", error);
     }
   }, []);
 
@@ -225,7 +225,7 @@ export default function App() {
             <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic text-white inline-block mb-4 shadow">
               SENAI
             </div>
-            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Evaluation</h2>
+            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Avaliação</h2>
             <p className="text-blue-200 text-xs mt-1 font-bold">Mecânico de Usinagem Convencional</p>
           </div>
 
