@@ -28,11 +28,9 @@ export default function LinhaAlunoAvaliacao({
   const obsAtiva = observacoes[capacidadeId] || '';
   const notaAtiva = notasNumericas[capacidadeId] || '';
 
-  // Abre a caixinha nativa para digitar a nota sem interferência
   const abrirPromptNota = () => {
     const resposta = window.prompt(`Digite a nota de 0 a 100 para ${aluno.nome}:`, notaAtiva);
     
-    // Se o usuário cancelou, não faz nada
     if (resposta === null) return;
 
     if (resposta === '') {
@@ -40,7 +38,6 @@ export default function LinhaAlunoAvaliacao({
       return;
     }
 
-    // Validação simples de número
     const num = parseInt(resposta, 10);
     if (!isNaN(num) && num >= 0 && num <= 100) {
       handleMudarNotaNumerica(aluno.id, capacidadeId, num.toString());
@@ -58,7 +55,7 @@ export default function LinhaAlunoAvaliacao({
         </div>
 
         <div className="flex flex-wrap items-center gap-6">
-          {/* CRITÉRIOS OFICIAIS SMO */}
+          {/* CRITÉRIOS OFICIAIS SMO - CORRIGIDO AQUI */}
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
             {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
               const ativo = rubricaAtiva === nivel;
@@ -70,7 +67,7 @@ export default function LinhaAlunoAvaliacao({
                 <button
                   key={nivel}
                   type="button"
-                  onClick={() => handleDefinirRubrica(aluno.id, capacidadID, nivel)}
+                  onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, nivel)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${ativo ? corAtivo : 'text-slate-600 hover:bg-slate-200'}`}
                 >
                   {nivel}
@@ -79,14 +76,14 @@ export default function LinhaAlunoAvaliacao({
             })}
           </div>
 
-          {/* NOVO CAMPO DE NOTA SIMPLES */}
+          {/* CAMPO DE NOTA SIMPLES */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={abrirPromptNota}
               className="px-3 h-[36px] bg-slate-800 text-white font-black text-[10px] rounded-xl uppercase hover:bg-slate-700 transition-colors"
             >
-              Lançar Nota
+              Nota
             </button>
             <div className="w-12 h-[36px] bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center font-black text-xs text-slate-800">
               {notaAtiva || '-'}
@@ -109,7 +106,7 @@ export default function LinhaAlunoAvaliacao({
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Evidências / Observações de Desempenho</label>
         <textarea
           value={obsAtiva}
-          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
+          onChange={(e) => handleMudarObservation(aluno.id, capacidadeId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none transition-all resize-none h-20"
         />
