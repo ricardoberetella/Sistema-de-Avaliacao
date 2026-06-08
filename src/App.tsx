@@ -204,6 +204,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* Tabela 1: Notas e Rubricas Nominais */}
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -220,7 +221,6 @@ export default function App() {
           <tbody>
             {alunosDaTurma.map((aluno, idx) => (
               <tr key={aluno.id}>
-                {/* Numeração da chamada adicionada na tabela de impressão */}
                 <td className="font-bold text-slate-500 text-xs tracking-tight text-left">{String(idx + 1).padStart(2, '0')}</td>
                 <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
@@ -239,6 +239,29 @@ export default function App() {
             ))}
           </tbody>
         </table>
+
+        {/* Tabela 2: Legenda Detalhada de Capacidades Técnicas (Adicionada abaixo da principal) */}
+        <div className="mt-8 border-t-2 border-slate-200 pt-4 avoiding-page-break">
+          <h3 className="text-[10px] font-black uppercase text-[#004fa3] tracking-wider mb-2">
+            Legenda de Competências e Capacidades Técnicas Avaliadas
+          </h3>
+          <table className="w-full border-collapse border border-slate-200 text-[9px]">
+            <thead>
+              <tr className="bg-slate-50">
+                <th className="border border-slate-200 p-1.5 text-left font-black uppercase w-20 text-slate-700">Código</th>
+                <th className="border border-slate-200 p-1.5 text-left font-black uppercase text-slate-700">Descrição Detalhada da Capacidade Técnica</th>
+              </tr>
+            </thead>
+            <tbody>
+              {capacitiesFiltradas.map(cap => (
+                <tr key={cap.id} className="hover:bg-slate-50">
+                  <td className="border border-slate-200 p-1.5 font-black uppercase text-blue-700 tracking-tight whitespace-nowrap">{cap.codigo}</td>
+                  <td className="border border-slate-200 p-1.5 font-medium text-slate-800 leading-snug">{cap.descricao}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* PAINEL DE CONTROLE WEB */}
@@ -346,7 +369,7 @@ export default function App() {
                         <LinhaAlunoAvaliacao 
                           key={aluno.id}
                           aluno={aluno}
-                          index={index + 1} // Passando a numeração para o componente de linha
+                          index={index + 1} 
                           capacidadeId={capSelecionada.id}
                           handleExcluirAluno={handleExcluirAluno}
                           handleEditarAluno={handleEditarAluno}
