@@ -123,7 +123,6 @@ export default function App() {
     }
   }, []);
 
-  // Aceita string vazia para limpar a avaliação caso seja desmarcada
   const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho | '') => {
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
@@ -194,6 +193,7 @@ export default function App() {
               SENAI
             </div>
             <div>
+              <div className="text-[9px] font-black uppercase text-slate-700 tracking-tight">Mecânico de Usinagem Convencional</div>
               <h1 className="text-sm font-black uppercase tracking-tight text-[#004fa3]">Relatório Oficial de Rendimento</h1>
               <p className="text-[10px] font-bold text-slate-600 uppercase">UC: {ucAtiva} - {nomesUC[ucAtiva]}</p>
             </div>
@@ -243,9 +243,13 @@ export default function App() {
         {!autenticado ? (
           <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-white rounded-[24px] shadow-xl border border-slate-100 overflow-hidden">
-              <div className="bg-[#004fa3] p-8 text-center">
-                <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic text-white inline-block mb-4 shadow">
+              <div className="bg-[#004fa3] p-8 text-center flex flex-col items-center">
+                <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic text-white inline-block mb-3 shadow">
                   SENAI
+                </div>
+                {/* Curso inserido exatamente entre o logo e o título do sistema */}
+                <div className="text-blue-100 text-[11px] font-black uppercase tracking-widest mb-1 mt-1">
+                  Mecânico de Usinagem Convencional
                 </div>
                 <h2 className="text-white text-md font-black uppercase tracking-wider">Sistema de Avaliação</h2>
               </div>
@@ -267,7 +271,9 @@ export default function App() {
               <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
                 <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic">SENAI</div>
                 <div className="text-center lg:text-left flex-1">
-                  <h1 className="text-lg md:text-xl font-black uppercase">Sistema de Avaliação</h1>
+                  {/* Curso adicionado também no cabeçalho interno da aplicação */}
+                  <div className="text-blue-200 text-xs font-black uppercase tracking-wider">Mecânico de Usinagem Convencional</div>
+                  <h1 className="text-lg md:text-xl font-black uppercase mt-0.5">Sistema de Avaliação</h1>
                   <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
                     {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as UCId[]).map((sigla) => (
                       <button 
