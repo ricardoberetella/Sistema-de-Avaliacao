@@ -24,7 +24,6 @@ export default function App() {
   
   const capacitiesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   
-  // Filtra e força estritamente a ordenação alfabética dos alunos exibidos na turma selecionada
   const alunosDaTurma = alunos
     .filter(a => a.turmaId === turmaAtiva)
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
@@ -124,7 +123,8 @@ export default function App() {
     }
   }, []);
 
-  const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
+  // Aceita string vazia para limpar a avaliação caso seja desmarcada
+  const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho | '') => {
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`avaliacoes.${capacidadeId}`]: nivel
@@ -226,7 +226,7 @@ export default function App() {
                   return (
                     <td key={cap.id} className="text-center font-bold">
                       <span className={rubrica === 'NSA' || rubrica === 'APO' ? 'text-red-600' : rubrica === 'PAR' || rubrica === 'AUT' ? 'text-emerald-600' : ''}>
-                        {rubrica}
+                        {rubrica || '-'}
                       </span>
                       {nota && <span className="text-[8px] text-slate-500 font-normal ml-0.5">{nota}</span>}
                     </td>
