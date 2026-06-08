@@ -50,8 +50,7 @@ export default function App() {
           nome: dados.nome || '',
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
-          observacoes: dados.observacoes || {},
-          notasNumericas: dados.notasNumericas || dados.notesNumericas || {}
+          observacoes: dados.observacoes || {}
         });
       });
       listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -76,8 +75,7 @@ export default function App() {
         nome: nomeFormatado,
         turmaId: turmaAtiva,
         avaliacoes: {},
-        observacoes: {},
-        notasNumericas: {}
+        observacoes: {}
       });
     } catch (error) {
       console.error("Erro ao adicionar aluno:", error);
@@ -140,23 +138,6 @@ export default function App() {
     }
   }, []);
 
-  const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
-    setAlunos(prev => prev.map(a => {
-      if (a.id === alunoId) {
-        return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valor } };
-      }
-      return a;
-    }));
-
-    try {
-      await updateDoc(doc(db, 'alunos', alunoId), {
-        [`notasNumericas.${capacidadeId}`]: valor
-      });
-    } catch (error) {
-      console.error("Erro ao salvar valor da nota:", error);
-    }
-  }, []);
-
   const getContagemRubricas = (capId: string) => {
     const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     alunosDaTurma.forEach(a => {
@@ -193,18 +174,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased layout-normal">
-      <style>{`
-        #relatorio-pdf-container { display: none; }
-        @media print {
-          .conteudo-tela { display: none !important; }
-          body { background-color: #ffffff !important; }
-          #relatorio-pdf-container { display: block !important; position: relative !important; width: 100% !important; }
-          @page { size: A4 landscape; margin: 10mm; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        }
-      `}</style>
-
+    <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       {!autenticado ? (
         <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-white rounded-[24px] shadow-xl border border-slate-100 overflow-hidden">
@@ -227,7 +197,7 @@ export default function App() {
           </div>
         </div>
       ) : (
-        <div className="conteudo-tela">
+        <div>
           <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
               <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic">SENAI</div>
@@ -298,7 +268,6 @@ export default function App() {
                         aluno={aluno}
                         capacidadeId={capSelecionada.id}
                         handleExcluirAluno={handleExcluirAluno}
-                        handleMudarNotaNumerica={handleMudarNotaNumerica}
                         handleDefinirRubrica={handleDefinirRubrica}
                         handleMudarObservacao={handleMudarObservacao}
                       />
@@ -310,58 +279,9 @@ export default function App() {
                 </div>
               </div>
             )}
-
-            {verGraficos && (
-              <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-white w-full max-w-xl rounded-[24px] shadow-2xl overflow-hidden">
-                  <div className="p-6 bg-[#004fa3] text-white flex justify-between items-center">
-                    <h3 className="text-sm font-black uppercase">📊 Estatísticas - Turma {turmaAtiva}</h3>
-                    <button onClick={() => setVerGraficos(false)} className="text-white font-black">✕</button>
-                  </div>
-                  <div className="p-6 space-y-5">
-                    {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => (
-                      <div key={nivel} className="space-y-1">
-                        <div className="flex justify-between text-xs font-black">
-                          <span>{nivel}</span>
-                          <span>{totalGeralRubricas[nivel]} ({obterPorcentagem(totalGeralRubricas[nivel])})</span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                          <div className="bg-[#004fa3] h-full" style={{ width: obterPorcentagem(totalGeralRubricas[nivel]) }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </main>
         </div>
       )}
-
-      <div id="relatorio-pdf-container">
-        <div style={{ padding: '20px' }}>
-          <h2>SENAI - Pauta ({turmaAtiva})</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f1f5f9' }}>
-                <th style={{ border: '1px solid #cbd5e1', padding: '8px' }}>Aluno</th>
-                {capacitiesFiltradas.map(c => <th key={c.id} style={{ border: '1px solid #cbd5e1', padding: '8px' }}>{c.codigo}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {alunosDaTurma.map(aluno => (
-                <tr key={aluno.id}>
-                  <td style={{ border: '1px solid #cbd5e1', padding: '8px', fontWeight: 'bold' }}>{aluno.nome}</td>
-                  {capacitiesFiltradas.map(c => {
-                    const seguro = aluno.avaliacoes || {};
-                    return <td key={c.id} style={{ border: '1px solid #cbd5e1', padding: '8px', textAlign: 'center' }}>{seguro[c.id] || '-'}</td>;
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }
