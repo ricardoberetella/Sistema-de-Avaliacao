@@ -50,7 +50,8 @@ export default function App() {
           nome: dados.nome || '',
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
-          observacoes: dados.observacoes || {}
+          observacoes: dados.observacoes || {},
+          notasNumericas: dados.notasNumericas || {}
         });
       });
       listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -75,7 +76,8 @@ export default function App() {
         nome: nomeFormatado,
         turmaId: turmaAtiva,
         avaliacoes: {},
-        observacoes: {}
+        observacoes: {},
+        notasNumericas: {}
       });
     } catch (error) {
       console.error("Erro ao adicionar aluno:", error);
@@ -121,6 +123,23 @@ export default function App() {
     }
   }, []);
 
+  const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
+    setAlunos(prev => prev.map(a => {
+      if (a.id === alunoId) {
+        return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valor } };
+      }
+      return a;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'alunos', alunoId), {
+        [`notasNumericas.${capacidadeId}`]: valor
+      });
+    } catch (error) {
+      console.error("Erro ao salvar nota numérica:", error);
+    }
+  }, []);
+
   const handleMudarObservacao = useCallback(async (alunoId: string, capacidadeId: string, texto: string) => {
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
@@ -160,11 +179,6 @@ export default function App() {
   });
 
   const somaTotalRubricas = totalGeralRubricas.NSA + totalGeralRubricas.APO + totalGeralRubricas.PAR + totalGeralRubricas.AUT;
-
-  const obterPorcentagem = (valor: number) => {
-    if (somaTotalRubricas === 0) return '0%';
-    return `${((valor / somaTotalRubricas) * 100).toFixed(1)}%`;
-  };
 
   const exportarRelatorioPDF = () => {
     const tituloOriginal = document.title;
@@ -268,6 +282,7 @@ export default function App() {
                         aluno={aluno}
                         capacidadeId={capSelecionada.id}
                         handleExcluirAluno={handleExcluirAluno}
+                        handleMudarNotaNumerica={handleMudarNotaNumerica}
                         handleDefinirRubrica={handleDefinirRubrica}
                         handleMudarObservacao={handleMudarObservacao}
                       />
