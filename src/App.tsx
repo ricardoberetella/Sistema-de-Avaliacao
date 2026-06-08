@@ -23,7 +23,11 @@ export default function App() {
   const turmasDisponiveis: TurmaId[] = ['MA', 'MB', 'TA', 'TB'];
   
   const capacitiesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
-  const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
+  
+  // Filtra e força estritamente a ordenação alfabética dos alunos exibidos na turma selecionada
+  const alunosDaTurma = alunos
+    .filter(a => a.turmaId === turmaAtiva)
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   const nomesUC: Record<UCId, string> = {
     FUSI: 'Fresagem Universal e CNC',
@@ -61,7 +65,6 @@ export default function App() {
           notasNumericas: dados.notasNumericas || {}
         });
       });
-      listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
       setAlunos(listaAlunos);
     }, (error) => {
       console.error("Erro no Firestore:", error);
@@ -102,16 +105,26 @@ export default function App() {
     }
   }, []);
 
-  const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
-    setAlunos(prev => prev.map(a => {
-      if (a.id === alunoId) {
-        const mapAvaliacoes = a.avaliacoes || {};
-        const novasAvaliacoes = { ...mapAvaliacoes, [capacidadeId]: nivel };
-        return { ...a, avaliacoes: novasAvaliacoes };
-      }
-      return a;
-    }));
+  const handleEditarAluno = useCallback(async (alunoId: string, nomeAtual: string) => {
+    const novoNomePrompt = window.prompt(`Editar nome do aluno:`, nomeAtual);
+    if (novoNomePrompt === null) return; 
+    
+    const nomeValidado = novoNomePrompt.trim().toUpperCase();
+    if (!nomeValidado) {
+      window.alert("O nome do aluno não pode ficar em branco!");
+      return;
+    }
 
+    try {
+      await updateDoc(doc(db, 'alunos', alunoId), {
+        nome: nomeValidado
+      });
+    } catch (error) {
+      console.error("Erro ao editar aluno:", error);
+    }
+  }, []);
+
+  const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`avaliacoes.${capacidadeId}`]: nivel
@@ -122,13 +135,6 @@ export default function App() {
   }, []);
 
   const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
-    setAlunos(prev => prev.map(a => {
-      if (a.id === alunoId) {
-        return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valor } };
-      }
-      return a;
-    }));
-
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`notasNumericas.${capacidadeId}`]: valor
@@ -139,13 +145,6 @@ export default function App() {
   }, []);
 
   const handleMudarObservacao = useCallback(async (alunoId: string, capacidadeId: string, texto: string) => {
-    setAlunos(prev => prev.map(a => {
-      if (a.id === alunoId) {
-        return { ...a, observacoes: { ...(a.observacoes || {}), [capacidadeId]: texto } };
-      }
-      return a;
-    }));
-
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
         [`observacoes.${capacidadeId}`]: texto
@@ -167,7 +166,6 @@ export default function App() {
     return contagem;
   };
 
-  // Cálculo para o dashboard de estatísticas
   const totalGeralRubricasUC = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
   capacitiesFiltradas.forEach(cap => {
     const c = getContagemRubricas(cap.id);
@@ -188,31 +186,32 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      {/* ESPELHO EXCLUSIVO PARA IMPRESSÃO */}
-      <div className="hidden print:block p-8 bg-white text-black min-h-screen">
-        <div className="flex items-center justify-between border-b-4 border-[#004fa3] pb-4 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-red-600 px-4 py-1 rounded-sm font-black text-xl italic text-white tracking-tighter">
+      {/* ESPELHO EXCLUSIVO PARA IMPRESSÃO EM FOLHA ÚNICA A4 */}
+      <div className="hidden print:block p-2 bg-white text-black min-h-screen">
+        <div className="flex items-center justify-between border-b-2 border-[#004fa3] pb-2 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="bg-red-600 px-3 py-1 rounded-sm font-black text-md italic text-white tracking-tighter">
               SENAI
             </div>
             <div>
-              <h1 className="text-xl font-black uppercase tracking-tight text-[#004fa3]">Relatório Oficial de Rendimento</h1>
-              <p className="text-xs font-bold text-slate-600 uppercase">Unidade Curricular: {ucAtiva} - {nomesUC[ucAtiva]}</p>
+              <h1 className="text-sm font-black uppercase tracking-tight text-[#004fa3]">Relatório Oficial de Rendimento</h1>
+              <p className="text-[10px] font-bold text-slate-600 uppercase">UC: {ucAtiva} - {nomesUC[ucAtiva]}</p>
             </div>
           </div>
-          <div className="text-right text-xs font-bold">
-            <p className="text-sm font-black text-slate-900">TURMA: {turmaAtiva}</p>
-            <p className="text-slate-500 mt-1">Data: {new Date().toLocaleDateString('pt-BR')}</p>
+          <div className="text-right text-[10px] font-bold">
+            <p className="text-xs font-black text-slate-900">TURMA: {turmaAtiva}</p>
+            <p className="text-slate-500">Data: {new Date().toLocaleDateString('pt-BR')}</p>
           </div>
         </div>
 
-        <table className="w-full border-collapse border border-slate-300 text-xs">
+        <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-slate-100 text-slate-800">
-              <th className="border border-slate-300 p-2 text-left font-black uppercase">Estudante</th>
+            <tr>
+              <th className="text-left uppercase w-52">Estudante</th>
               {capacitiesFiltradas.map(cap => (
-                <th key={cap.id} className="border border-slate-300 p-2 text-center font-black uppercase w-24">
-                  {cap.codigo}
+                <th key={cap.id} className="text-center uppercase">
+                  <div>{cap.codigo.split(' ')[0]}</div>
+                  <div className="text-[7px] text-slate-500 font-normal">{cap.codigo.split(' ').slice(1).join(' ')}</div>
                 </th>
               ))}
             </tr>
@@ -220,16 +219,16 @@ export default function App() {
           <tbody>
             {alunosDaTurma.map(aluno => (
               <tr key={aluno.id}>
-                <td className="border border-slate-300 p-2 font-bold uppercase">{aluno.nome}</td>
+                <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
                   const rubrica = aluno.avaliacoes?.[cap.id] || '-';
                   const nota = aluno.notasNumericas?.[cap.id] ? `(${aluno.notasNumericas[cap.id]})` : '';
                   return (
-                    <td key={cap.id} className="border border-slate-300 p-2 text-center font-bold">
+                    <td key={cap.id} className="text-center font-bold">
                       <span className={rubrica === 'NSA' || rubrica === 'APO' ? 'text-red-600' : rubrica === 'PAR' || rubrica === 'AUT' ? 'text-emerald-600' : ''}>
                         {rubrica}
                       </span>
-                      <div className="text-[10px] text-slate-500 font-normal mt-0.5">{nota}</div>
+                      {nota && <span className="text-[8px] text-slate-500 font-normal ml-0.5">{nota}</span>}
                     </td>
                   );
                 })}
@@ -239,7 +238,7 @@ export default function App() {
         </table>
       </div>
 
-      {/* PAINEL WEB DO SISTEMA */}
+      {/* PAINEL DE CONTROLE WEB */}
       <div className="print:hidden">
         {!autenticado ? (
           <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4">
@@ -311,7 +310,6 @@ export default function App() {
                 </form>
               </div>
 
-              {/* LISTA DE CAPACIDADES DA UNIDADE CURRICULAR */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {capacitiesFiltradas.map((cap) => (
                   <CapacidadeCard 
@@ -324,7 +322,7 @@ export default function App() {
                 ))}
               </div>
 
-              {/* DIÁRIO MODAL */}
+              {/* MODAL DIÁRIO DE CLASSE */}
               {capSelecionada && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white w-full max-w-6xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -335,6 +333,7 @@ export default function App() {
                       </div>
                       <button onClick={() => setCapSelecionada(null)} className="text-white bg-black/20 w-8 h-8 rounded-full">✕</button>
                     </div>
+                    
                     <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
                       {alunosDaTurma.map((aluno) => (
                         <LinhaAlunoAvaliacao 
@@ -342,12 +341,14 @@ export default function App() {
                           aluno={aluno}
                           capacidadeId={capSelecionada.id}
                           handleExcluirAluno={handleExcluirAluno}
-                          handleMudarNotaNumerica={handleMudarNotaNumerica}
+                          handleEditarAluno={handleEditarAluno}
                           handleDefinirRubrica={handleDefinirRubrica}
+                          handleMudarNotaNumerica={handleMudarNotaNumerica}
                           handleMudarObservacao={handleMudarObservacao}
                         />
                       ))}
                     </div>
+                    
                     <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                       <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
                         <div><span className="font-black text-red-600 block uppercase">NSA</span>Não consegue executar as operações básicas de forma satisfatória ou segura.</div>
