@@ -139,19 +139,49 @@ export default function App() {
   }, []);
 
   const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
-    setAlunos(prev => prev.map(a => {
-      if (a.id === alunoId) {
-        return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valor } };
-      }
-      return a;
-    }));
+    // CORREÇÃO: Permite campo vazio para que o usuário possa apagar tudo com Backspace
+    if (valor === '') {
+      setAlunos(prev => prev.map(a => {
+        if (a.id === alunoId) {
+          return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: '' } };
+        }
+        return a;
+      }));
 
-    try {
-      await updateDoc(doc(db, 'alunos', alunoId), {
-        [`notasNumericas.${capacidadeId}`]: valor
-      });
-    } catch (error) {
-      console.error("Erro ao salvar valor da nota:", error);
+      try {
+        await updateDoc(doc(db, 'alunos', alunoId), {
+          [`notasNumericas.${capacidadeId}`]: ''
+        });
+      } catch (error) {
+        console.error("Erro ao limpar valor da nota:", error);
+      }
+      return;
+    }
+
+    // CORREÇÃO: Filtra para aceitar apenas dígitos numéricos, evitando quebras de digitação
+    const apenasNumeros = valor.replace(/\D/g, '');
+    if (apenasNumeros === '') return;
+
+    const numValue = parseInt(apenasNumeros, 10);
+
+    // CORREÇÃO: Valida rigorosamente se o número está dentro do intervalo permitido da escala SENAI (0 a 100)
+    if (numValue >= 0 && numValue <= 100) {
+      const valorFinal = numValue.toString();
+
+      setAlunos(prev => prev.map(a => {
+        if (a.id === alunoId) {
+          return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valorFinal } };
+        }
+        return a;
+      }));
+
+      try {
+        await updateDoc(doc(db, 'alunos', alunoId), {
+          [`notasNumericas.${capacidadeId}`]: valorFinal
+        });
+      } catch (error) {
+        console.error("Erro ao salvar valor da nota:", error);
+      }
     }
   }, []);
 
@@ -308,7 +338,7 @@ export default function App() {
                   {alunosDaTurma.length === 0 ? (
                     <p className="text-xs font-bold text-slate-400 text-center py-12 bg-white rounded-xl border border-dashed border-slate-200">Nenhum aluno cadastrado.</p>
                   ) : (
-                    alunosDaTurma.map((aluno) => (
+                    <alunosDaTurma.map((aluno) => (
                       <LinhaAlunoAvaliacao 
                         key={aluno.id}
                         aluno={aluno}
