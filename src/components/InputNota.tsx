@@ -7,61 +7,57 @@ interface InputNotaProps {
 }
 
 export default function InputNota({ valorInicial, onSalvar }: InputNotaProps) {
-  const [valor, setValor] = useState<string>('');
+  // Estado local isolado armazena o texto livremente durante a digitação
+  const [texto, setTexto] = useState<string>('');
 
+  // Sincroniza apenas quando o valor inicial do banco realmente mudar
   useEffect(() => {
-    setValor(valorInicial || '');
+    setTexto(valorInicial || '');
   }, [valorInicial]);
 
+  // Debounce: Espera o usuário parar de digitar por 1 segundo antes de salvar no Firebase
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (texto !== valorInicial) {
+        onSalvar(texto);
+      }
+    }, 1000);
+
+    return () => clearTimeout(delayDebounce);
+  }, [texto, valorInicial, onSalvar]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    if (v === '') {
-      setValor('');
+    const inputVal = e.target.value;
+
+    // Se apagar tudo, permite ficar em branco
+    if (inputVal === '') {
+      setTexto('');
       return;
     }
-    const apenasNumeros = v.replace(/\D/g, '');
+
+    // Remove qualquer coisa que não seja número
+    const apenasNumeros = inputVal.replace(/\D/g, '');
     if (apenasNumeros === '') return;
 
+    // Força o teto regulamentar de 0 a 100 do SENAI
     const num = parseInt(apenasNumeros, 10);
     if (!isNaN(num) && num >= 0 && num <= 100) {
-      setValor(num.toString());
-    }
-  };
-
-  const handleSalvarClique = () => {
-    const valorLimpo = valor.trim();
-    if (valorLimpo === '') {
-      onSalvar('');
-      return;
-    }
-    const num = parseInt(valorLimpo, 10);
-    if (!isNaN(num)) {
-      const verificado = Math.max(0, Math.min(100, num));
-      onSalvar(verificado.toString());
+      setTexto(num.toString());
     }
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <input
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        maxLength={3}
-        value={valor}
-        onChange={handleChange}
-        placeholder="0-100"
-        autoComplete="off"
-        spellCheck={false}
-        className="w-16 h-[34px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-lg font-black text-xs text-slate-800 focus:outline-none"
-      />
-      <button
-        type="button"
-        onClick={handleSalvarClique}
-        className="h-[34px] px-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-black uppercase transition-colors"
-      >
-        OK
-      </button>
-    </div>
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      maxLength={3}
+      value={texto}
+      onChange={handleChange}
+      placeholder="0-100"
+      autoComplete="off"
+      spellCheck={false}
+      className="w-24 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none transition-all shadow-sm"
+    />
   );
 }
