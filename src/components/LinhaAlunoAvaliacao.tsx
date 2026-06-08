@@ -6,7 +6,6 @@ interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
   capacidadeId: string;
   handleExcluirAluno: (id: string, nome: string) => void;
-  handleMudarNotaNumerica: (alunoId: string, capacidadeId: string, valor: string) => void;
   handleDefinirRubrica: (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => void;
   handleMudarObservacao: (alunoId: string, capacidadeId: string, texto: string) => void;
 }
