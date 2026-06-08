@@ -6,6 +6,7 @@ interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
   capacidadeId: string;
   handleExcluirAluno: (id: string, nome: string) => void;
+  handleMudarNotaNumerica: (alunoId: string, capacidadeId: string, valor: string) => void;
   handleDefinirRubrica: (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => void;
   handleMudarObservacao: (alunoId: string, capacidadeId: string, texto: string) => void;
 }
@@ -14,15 +15,39 @@ export default function LinhaAlunoAvaliacao({
   aluno,
   capacidadeId,
   handleExcluirAluno,
+  handleMudarNotaNumerica,
   handleDefinirRubrica,
   handleMudarObservacao,
 }: LinhaAlunoAvaliacaoProps) {
   
   const avaliacoes = aluno.avaliacoes || {};
   const observacoes = aluno.observacoes || {};
+  const notasNumericas = aluno.notasNumericas || {};
 
   const rubricaAtiva = avaliacoes[capacidadeId] || null;
   const obsAtiva = observacoes[capacidadeId] || '';
+  const notaAtiva = notasNumericas[capacidadeId] || '';
+
+  // Abre a caixinha nativa para digitar a nota sem interferência
+  const abrirPromptNota = () => {
+    const resposta = window.prompt(`Digite a nota de 0 a 100 para ${aluno.nome}:`, notaAtiva);
+    
+    // Se o usuário cancelou, não faz nada
+    if (resposta === null) return;
+
+    if (resposta === '') {
+      handleMudarNotaNumerica(aluno.id, capacidadeId, '');
+      return;
+    }
+
+    // Validação simples de número
+    const num = parseInt(resposta, 10);
+    if (!isNaN(num) && num >= 0 && num <= 100) {
+      handleMudarNotaNumerica(aluno.id, capacidadeId, num.toString());
+    } else {
+      window.alert('Por favor, digite um número válido entre 0 e 100.');
+    }
+  };
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
@@ -45,13 +70,27 @@ export default function LinhaAlunoAvaliacao({
                 <button
                   key={nivel}
                   type="button"
-                  onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, nivel)}
+                  onClick={() => handleDefinirRubrica(aluno.id, capacidadID, nivel)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${ativo ? corAtivo : 'text-slate-600 hover:bg-slate-200'}`}
                 >
                   {nivel}
                 </button>
               );
             })}
+          </div>
+
+          {/* NOVO CAMPO DE NOTA SIMPLES */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={abrirPromptNota}
+              className="px-3 h-[36px] bg-slate-800 text-white font-black text-[10px] rounded-xl uppercase hover:bg-slate-700 transition-colors"
+            >
+              Lançar Nota
+            </button>
+            <div className="w-12 h-[36px] bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center font-black text-xs text-slate-800">
+              {notaAtiva || '-'}
+            </div>
           </div>
 
           {/* EXCLUIR ESTUDANTE */}
