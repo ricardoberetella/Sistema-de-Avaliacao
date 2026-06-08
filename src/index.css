@@ -2,34 +2,62 @@
 @import "tailwindcss";
 
 @media print {
-  /* Força o fundo branco e texto preto na impressão */
+  /* Reseta configurações globais de fundo para garantir contraste e remover margens */
   body, html, main, #root {
     background: white !important;
     color: black !important;
     padding: 0 !important;
     margin: 0 !important;
+    font-family: sans-serif !important;
   }
 
-  /* Oculta absolutamente tudo que tiver a classe print:hidden */
+  /* Oculta elementos desnecessários para a versão impressa */
   .print\:hidden {
     display: none !important;
   }
 
-  /* Garante que a tabela use 100% da folha A4 e quebre linhas corretamente */
+  /* Configuração rígida de margens da folha A4 */
+  @page {
+    size: A4 portrait;
+    margin: 8mm 6mm 8mm 6mm; /* Margens otimizadas para aproveitar o espaço vertical */
+  }
+
+  /* Configurações milimétricas para compactação da tabela */
   table {
     width: 100% !important;
     border-collapse: collapse !important;
-    page-break-inside: auto;
-  }
-  
-  tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
+    page-break-inside: avoid !important; /* Evita que a tabela quebre em duas páginas */
   }
 
-  /* Remove cabeçalhos e rodapés padrões do navegador (como a URL da página) */
-  @page {
-    size: auto;
-    margin: 15mm 10mm 15mm 10mm;
+  th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-size: 8px !important; /* Fonte compacta para os cabeçalhos das capacidades */
+    font-weight: 900 !important;
+    padding: 3px 2px !important; /* Padding mínimo para evitar estiramento vertical */
+    border: 1px solid #cbd5e1 !important;
+    line-height: 1.1 !important;
+  }
+
+  td {
+    font-size: 9px !important; /* Tamanho de fonte ideal para leitura e otimização de espaço */
+    padding: 3px 4px !important; /* Espaçamento interno vertical reduzido para caber os 16 alunos */
+    border: 1px solid #cbd5e1 !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Força a renderização correta de cores semafóricas na impressão */
+  .text-red-600 {
+    color: #b91c1c !important;
+    font-weight: 900 !important;
+  }
+  
+  .text-emerald-600 {
+    color: #047857 !important;
+    font-weight: 900 !important;
+  }
+
+  .text-slate-500 {
+    color: #64748b !important;
   }
 }
