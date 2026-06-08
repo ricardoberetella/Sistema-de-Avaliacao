@@ -25,6 +25,14 @@ export default function App() {
   const capacitiesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
+  // Mapeamento dos nomes por extenso das UCs para o cabeçalho do PDF
+  const nomesUC: Record<UCId, string> = {
+    FUSI: 'Fresagem Universal e CNC',
+    CRD: 'Cálculo Técnico e Desenho Mecânico',
+    LIDT: 'Leitura e Interpretação de Desenho Técnico',
+    CIEMA: 'Ciência dos Materiais e Metrologia'
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (senhaInput === 'ianes662') {
@@ -100,7 +108,7 @@ export default function App() {
       if (a.id === alunoId) {
         const mapAvaliacoes = a.avaliacoes || {};
         const novasAvaliacoes = { ...mapAvaliacoes, [capacidadeId]: nivel };
-        return { ...a, avaliacoes: novasAvaliacoes }; // Corrigido erro de digitação aqui
+        return { ...a, avaliacoes: novasAvaliacoes };
       }
       return a;
     }));
@@ -148,6 +156,7 @@ export default function App() {
     }
   }, []);
 
+  // Calcula a quantidade de cada rubrica de uma capacidade específica
   const getContagemRubricas = (capId: string) => {
     const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     alunosDaTurma.forEach(a => {
@@ -160,153 +169,308 @@ export default function App() {
     return contagem;
   };
 
+  // 1. CONTADOR GERAL DE RUBRICAS ACUMULADAS NA UC INTEIRA
+  const totalGeralRubricasUC = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
+  capacitiesFiltradas.forEach(cap => {
+    const c = getContagemRubricas(cap.id);
+    totalGeralRubricasUC.NSA += c.NSA;
+    totalGeralRubricasUC.APO += c.APO;
+    totalGeralRubricasUC.PAR += c.PAR;
+    totalGeralRubricasUC.AUT += c.AUT;
+  });
+
+  const somaGeralAbsoluta = totalGeralRubricasUC.NSA + totalGeralRubricasUC.APO + totalGeralRubricasUC.PAR + totalGeralRubricasUC.AUT;
+
+  const obterPorcentagemGeral = (valor: number) => {
+    if (somaGeralAbsoluta === 0) return 0;
+    return (valor / somaGeralAbsoluta) * 100;
+  };
+
   const exportarRelatorioPDF = () => {
-    const tituloOriginal = document.title;
-    document.title = `Relatorio_SENAI_Turma_${turmaAtiva}_${ucAtiva}`;
     window.print();
-    document.title = tituloOriginal;
   };
 
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
-      {!autenticado ? (
-        <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-[24px] shadow-xl border border-slate-100 overflow-hidden">
-            <div className="bg-[#004fa3] p-8 text-center">
-              <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic text-white inline-block mb-4 shadow">
-                SENAI
-              </div>
-              <h2 className="text-white text-md font-black uppercase tracking-wider">Sistema de Avaliação</h2>
+      
+      {/* 3. LAYOUT EXCLUSIVO DE IMPRESSÃO (FICA OCULTO NA TELA DO PC/CELULAR) */}
+      <div className="hidden print:block p-8 bg-white text-black min-h-screen">
+        <div className="flex items-center justify-between border-b-4 border-[#004fa3] pb-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-red-600 px-4 py-1 rounded-sm font-black text-xl italic text-white tracking-tighter">
+              SENAI
             </div>
-            <form onSubmit={handleLoginSubmit} className="p-8 space-y-6">
-              <input
-                type="password"
-                value={senhaInput}
-                onChange={(e) => setSenhaInput(e.target.value)}
-                placeholder="Digite a senha..."
-                className={`w-full h-[48px] px-4 bg-slate-50 border-2 ${erroLogin ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-blue-500'} text-slate-800 text-center font-black tracking-widest rounded-xl focus:outline-none`}
-              />
-              <button type="submit" className="w-full h-[48px] bg-[#004fa3] text-white font-black text-xs uppercase tracking-widest rounded-xl">Entrar</button>
-            </form>
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-tight text-[#004fa3]">Relatório Oficial de Rendimento</h1>
+              <p className="text-xs font-bold text-slate-600 uppercase">Unidade Curricular: {ucAtiva} - {nomesUC[ucAtiva]}</p>
+            </div>
+          </div>
+          <div className="text-right text-xs font-bold">
+            <p className="text-sm font-black text-slate-900">TURMA: {turmaAtiva}</p>
+            <p className="text-slate-500 mt-1">Data: {new Date().toLocaleDateString('pt-BR')}</p>
           </div>
         </div>
-      ) : (
-        <div>
-          <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
-            <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
-              <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic">SENAI</div>
-              <div className="text-center lg:text-left flex-1">
-                <h1 className="text-lg md:text-xl font-black uppercase">Sistema de Avaliação</h1>
-                <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
-                  {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as UCId[]).map((sigla) => (
-                    <button 
-                      key={sigla}
-                      onClick={() => { setUcAtiva(sigla); setCapSelecionada(null); }}
-                      className={`text-xs font-black uppercase transition-all ${ucAtiva === sigla ? 'text-white border-b-2 border-white' : 'text-blue-300'}`}
+
+        <table className="w-full border-collapse border border-slate-300 text-xs">
+          <thead>
+            <tr className="bg-slate-100 text-slate-800">
+              <th className="border border-slate-300 p-2 text-left font-black uppercase">Estudante</th>
+              {capacitiesFiltradas.map(cap => (
+                <th key={cap.id} className="border border-slate-300 p-2 text-center font-black uppercase w-24">
+                  {cap.codigo}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {alunosDaTurma.map(aluno => (
+              <tr key={aluno.id} className="hover:bg-slate-50">
+                <td className="border border-slate-300 p-2 font-bold uppercase">{aluno.nome}</td>
+                {capacitiesFiltradas.map(cap => {
+                  const rubrica = aluno.avaliacoes?.[cap.id] || '-';
+                  const nota = aluno.notasNumericas?.[cap.id] ? `(${aluno.notasNumericas[cap.id]})` : '';
+                  return (
+                    <td key={cap.id} className="border border-slate-300 p-2 text-center font-bold">
+                      <span className={rubrica === 'NSA' || rubrica === 'APO' ? 'text-red-600' : rubrica === 'PAR' || rubrica === 'AUT' ? 'text-emerald-600' : ''}>
+                        {rubrica}
+                      </span>
+                      <div className="text-[10px] text-slate-500 font-normal mt-0.5">{nota}</div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="mt-8 border-t border-slate-200 pt-4 flex justify-between text-[10px] text-slate-400 font-bold uppercase">
+          <p>Série Metódica Ocupacional (SMO) - SENAI-SP</p>
+          <p>Assinatura do Instrutor Responsável: ___________________________</p>
+        </div>
+      </div>
+
+      {/* CONTEÚDO VISUAL DA TELA DO SISTEMA */}
+      <div className="print:hidden">
+        {!autenticado ? (
+          <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white rounded-[24px] shadow-xl border border-slate-100 overflow-hidden">
+              <div className="bg-[#004fa3] p-8 text-center">
+                <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic text-white inline-block mb-4 shadow">
+                  SENAI
+                </div>
+                <h2 className="text-white text-md font-black uppercase tracking-wider">Sistema de Avaliação</h2>
+              </div>
+              <form onSubmit={handleLoginSubmit} className="p-8 space-y-6">
+                <input
+                  type="password"
+                  value={senhaInput}
+                  onChange={(e) => setSenhaInput(e.target.value)}
+                  placeholder="Digite a senha..."
+                  className={`w-full h-[48px] px-4 bg-slate-50 border-2 ${erroLogin ? 'border-red-500 bg-red-50' : 'border-slate-200 focus:border-blue-500'} text-slate-800 text-center font-black tracking-widest rounded-xl focus:outline-none`}
+                />
+                <button type="submit" className="w-full h-[48px] bg-[#004fa3] text-white font-black text-xs uppercase tracking-widest rounded-xl">Entrar</button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <header className="bg-[#004fa3] px-8 py-5 flex flex-col lg:flex-row items-center justify-between shadow-md text-white gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
+                <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic">SENAI</div>
+                <div className="text-center lg:text-left flex-1">
+                  <h1 className="text-lg md:text-xl font-black uppercase">Sistema de Avaliação</h1>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
+                    {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as UCId[]).map((sigla) => (
+                      <button 
+                        key={sigla}
+                        onClick={() => { setUcAtiva(sigla); setCapSelecionada(null); }}
+                        className={`text-xs font-black uppercase transition-all ${ucAtiva === sigla ? 'text-white border-b-2 border-white' : 'text-blue-300'}`}
+                      >
+                        {sigla}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="bg-[#003670] p-1 rounded-xl flex items-center">
+                  {turmasDisponiveis.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => { setTurmaAtiva(t); setCapSelecionada(null); }}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-black ${turmaAtiva === t ? 'bg-white text-[#004fa3]' : 'text-blue-200'}`}
                     >
-                      {sigla}
+                      {t}
                     </button>
                   ))}
                 </div>
+                <button onClick={() => setAutenticado(false)} className="p-2 bg-red-600 text-white font-black text-[10px] rounded-xl uppercase">Sair</button>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="bg-[#003670] p-1 rounded-xl flex items-center">
-                {turmasDisponiveis.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => { setTurmaAtiva(t); setCapSelecionada(null); }}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-black ${turmaAtiva === t ? 'bg-white text-[#004fa3]' : 'text-blue-200'}`}
-                  >
-                    {t}
-                  </button>
-                ))}
+            </header>
+
+            <main className="p-8 max-w-[1600px] mx-auto">
+              
+              {/* BOTÕES DE INTERAÇÃO E CAMPO ADICIONAR */}
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-3xl font-black italic text-[#004fa3] uppercase">TURMA {turmaAtiva}</h2>
+                  <button onClick={() => setVerGraficos(true)} className="px-4 h-9 bg-blue-600 text-white font-black text-[10px] rounded-xl uppercase tracking-wider shadow hover:bg-blue-700 transition-colors">📊 Estatísticas</button>
+                  <button onClick={exportarRelatorioPDF} className="px-4 h-9 bg-slate-700 text-white font-black text-[10px] rounded-xl uppercase tracking-wider shadow hover:bg-slate-600 transition-colors">PDF 📄</button>
+                </div>
+                <form onSubmit={handleAddAluno} className="flex items-center gap-3">
+                  <input type="text" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="NOME DO ALUNO..." className="w-full sm:w-64 h-[44px] px-4 bg-white border-2 border-red-600 rounded-xl focus:outline-none text-xs font-bold" />
+                  <button type="submit" className="h-[44px] px-6 bg-red-600 text-white font-black text-xs rounded-xl uppercase">ADD</button>
+                </form>
               </div>
-              <button onClick={() => setAutenticado(false)} className="p-2 bg-red-600 text-white font-black text-[10px] rounded-xl uppercase">Sair</button>
-            </div>
-          </header>
 
-          <main className="p-8 max-w-[1600px] mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-              <div className="flex items-center gap-3">
-                <h2 className="text-3xl font-black italic text-[#004fa3] uppercase">TURMA {turmaAtiva}</h2>
-                <button onClick={() => setVerGraficos(true)} className="px-3 py-1.5 bg-blue-600 text-white font-black text-[10px] rounded-lg uppercase">📊 Estatísticas</button>
-                <button onClick={exportarRelatorioPDF} className="px-3 py-1.5 bg-slate-700 text-white font-black text-[10px] rounded-lg uppercase">PDF 📄</button>
-              </div>
-              <form onSubmit={handleAddAluno} className="flex items-center gap-3">
-                <input type="text" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="NOME DO ALUNO..." className="w-full sm:w-64 h-[44px] px-4 bg-white border-2 border-red-600 rounded-xl focus:outline-none text-xs" />
-                <button type="submit" className="h-[44px] px-6 bg-red-600 text-white font-black text-xs rounded-xl uppercase">ADD</button>
-              </form>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {capacitiesFiltradas.map((cap) => (
-                <CapacidadeCard key={cap.id} capacidade={cap} contagemRubricas={getContagemRubricas(cap.id)} totalAlunos={alunosDaTurma.length} onClick={() => setCapSelecionada(cap)} />
-              ))}
-            </div>
-
-            {capSelecionada && (
-              <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-white w-full max-w-6xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                  
-                  {/* TOPO MODAL */}
-                  <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
-                    <div>
-                      <span className="text-xs font-black text-blue-200 uppercase">{capSelecionada.codigo} - DIÁRIO</span>
-                      <h3 className="text-sm font-bold uppercase mt-1">{capSelecionada.descricao}</h3>
-                    </div>
-                    <button onClick={() => setCapSelecionada(null)} className="text-white bg-black/20 w-8 h-8 rounded-full">✕</button>
+              {/* 1. PAINEL DE RUBRICAS GERAIS DA UNIDADE CURRICULAR (ACIMA DO PROGRESSO) */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-8">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Totalizadores Acumulados da Unidade Curricular ({ucAtiva})</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-red-50 border border-red-100 p-4 rounded-xl flex flex-col justify-center items-center">
+                    <span className="text-xs font-black text-red-600 uppercase">NSA TOTAL</span>
+                    <span className="text-2xl font-black text-red-700 mt-1">{totalGeralRubricasUC.NSA}</span>
                   </div>
-                  
-                  {/* LISTA DE ALUNOS */}
-                  <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
-                    {alunosDaTurma.map((aluno) => (
-                      <LinhaAlunoAvaliacao 
-                        key={aluno.id}
-                        aluno={aluno}
-                        capacidadeId={capSelecionada.id}
-                        handleExcluirAluno={handleExcluirAluno}
-                        handleMudarNotaNumerica={handleMudarNotaNumerica}
-                        handleDefinirRubrica={handleDefinirRubrica}
-                        handleMudarObservacao={handleMudarObservacao}
-                      />
-                    ))}
+                  <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex flex-col justify-center items-center">
+                    <span className="text-xs font-black text-orange-600 uppercase">APO TOTAL</span>
+                    <span className="text-2xl font-black text-orange-700 mt-1">{totalGeralRubricasUC.APO}</span>
                   </div>
-                  
-                  {/* INFORMAÇÕES SOBRE AS RUBRICAS + BOTÃO FECHAR */}
-                  <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-                    <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
-                      <div className="border-r border-slate-100 pr-2">
-                        <span className="font-black text-red-600 block uppercase mb-0.5">NSA</span>
-                        Não consegue executar as operações básicas de forma satisfatória ou segura, mesmo com apoio. [Média &lt; 50]
-                      </div>
-                      <div className="border-r border-slate-100 px-2">
-                        <span className="font-black text-red-600 block uppercase mb-0.5">APO</span>
-                        Executa demonstrando insegurança e comete erros frequentes, necessitando de intervenção constante. [Média &lt; 50]
-                      </div>
-                      <div className="border-r border-slate-100 px-2">
-                        <span className="font-black text-emerald-600 block uppercase mb-0.5">PAR</span>
-                        Executa as operações, mas precisa de orientação pontual do docente para corrigir a técnica. [Média &ge; 50]
-                      </div>
-                      <div className="pl-2">
-                        <span className="font-black text-emerald-600 block uppercase mb-0.5">AUT</span>
-                        Executa com total autonomia e segurança, atingindo a precisão dimensional e bom acabamento. [Média &ge; 50]
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-end">
-                      <button onClick={() => setCapSelecionada(null)} className="px-6 h-[44px] bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider whitespace-nowrap hover:bg-slate-700 transition-colors">
-                        Fechar Diário
-                      </button>
-                    </div>
+                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex flex-col justify-center items-center">
+                    <span className="text-xs font-black text-blue-600 uppercase">PAR TOTAL</span>
+                    <span className="text-2xl font-black text-blue-700 mt-1">{totalGeralRubricasUC.PAR}</span>
                   </div>
-
+                  <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex flex-col justify-center items-center">
+                    <span className="text-xs font-black text-emerald-600 uppercase">AUT TOTAL</span>
+                    <span className="text-2xl font-black text-emerald-700 mt-1">{totalGeralRubricasUC.AUT}</span>
+                  </div>
                 </div>
               </div>
-            )}
-          </main>
-        </div>
-      )}
+
+              {/* CARDS DAS CAPACIDADES TÉCNICAS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {capacitiesFiltradas.map((cap) => (
+                  <CapacidadeCard key={cap.id} capacidade={cap} contagemRubricas={getContagemRubricas(cap.id)} totalAlunos={alunosDaTurma.length} onClick={() => setCapSelecionada(cap)} />
+                ))}
+              </div>
+
+              {/* DIÁRIO MODAL COMPLEMENTAR */}
+              {capSelecionada && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                  <div className="bg-white w-full max-w-6xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
+                      <div>
+                        <span className="text-xs font-black text-blue-200 uppercase">{capSelecionada.codigo} - DIÁRIO</span>
+                        <h3 className="text-sm font-bold uppercase mt-1">{capSelecionada.descricao}</h3>
+                      </div>
+                      <button onClick={() => setCapSelecionada(null)} className="text-white bg-black/20 w-8 h-8 rounded-full">✕</button>
+                    </div>
+                    <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
+                      {alunosDaTurma.map((aluno) => (
+                        <LinhaAlunoAvaliacao 
+                          key={aluno.id}
+                          aluno={aluno}
+                          capacidadeId={capSelecionada.id}
+                          handleExcluirAluno={handleExcluirAluno}
+                          handleMudarNotaNumerica={handleMudarNotaNumerica}
+                          handleDefinirRubrica={handleDefinirRubrica}
+                          handleMudarObservacao={handleMudarObservacao}
+                        />
+                      ))}
+                    </div>
+                    <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                      <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
+                        <div><span className="font-black text-red-600 block uppercase">NSA</span>Não consegue executar as operações básicas de forma satisfatória ou segura.</div>
+                        <div><span className="font-black text-red-600 block uppercase">APO</span>Executa demonstrando insegurança e comete erros frequentes.</div>
+                        <div><span className="font-black text-emerald-600 block uppercase">PAR</span>Executa as operações, mas precisa de orientação pontual do docente.</div>
+                        <div><span className="font-black text-emerald-600 block uppercase">AUT</span>Executa com total autonomia e segurança, atingindo precisão dimensional.</div>
+                      </div>
+                      <div className="flex items-center justify-end">
+                        <button onClick={() => setCapSelecionada(null)} className="px-6 h-[44px] bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider whitespace-nowrap hover:bg-slate-700 transition-colors">Fechar Diário</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. MODAL DE ESTATÍSTICAS DETALHADO (FUNCIONANDO) */}
+              {verGraficos && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                  <div className="bg-white w-full max-w-3xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col">
+                    <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
+                      <div>
+                        <h3 className="font-black uppercase text-sm tracking-wider">📊 Estatísticas Analíticas da Turma</h3>
+                        <p className="text-xs text-slate-400 font-medium uppercase mt-0.5">Rendimento Acumulado na Unidade Curricular {ucAtiva}</p>
+                      </div>
+                      <button onClick={() => setVerGraficos(false)} className="text-white bg-white/10 w-8 h-8 rounded-full">✕</button>
+                    </div>
+                    
+                    <div className="p-6 space-y-6 bg-slate-50">
+                      {somaGeralAbsoluta === 0 ? (
+                        <div className="text-center py-12 text-slate-400 font-bold uppercase text-xs">Nenhuma avaliação realizada nesta Unidade Curricular até o momento.</div>
+                      ) : (
+                        <div className="space-y-5">
+                          {/* GRÁFICO BARRA - AUT */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
+                              <span>Autonomia (AUT)</span>
+                              <span>{totalGeralRubricasUC.AUT} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.AUT).toFixed(1)}%)</span>
+                            </div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
+                              <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.AUT)}%` }}></div>
+                            </div>
+                          </div>
+
+                          {/* GRÁFICO BARRA - PAR */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
+                              <span>Parcialmente (PAR)</span>
+                              <span>{totalGeralRubricasUC.PAR} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.PAR).toFixed(1)}%)</span>
+                            </div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
+                              <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.PAR)}%` }}></div>
+                            </div>
+                          </div>
+
+                          {/* GRÁFICO BARRA - APO */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
+                              <span>Com Apoio (APO)</span>
+                              <span>{totalGeralRubricasUC.APO} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.APO).toFixed(1)}%)</span>
+                            </div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
+                              <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.APO)}%` }}></div>
+                            </div>
+                          </div>
+
+                          {/* GRÁFICO BARRA - NSA */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
+                              <span>Não Satisfeito (NSA)</span>
+                              <span>{totalGeralRubricasUC.NSA} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.NSA).toFixed(1)}%)</span>
+                            </div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
+                              <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.NSA)}%` }}></div>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-slate-200 flex justify-between text-xs font-black uppercase text-slate-500">
+                            <span>Total de Avaliações Efetuadas:</span>
+                            <span>{somaGeralAbsoluta}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 bg-slate-100 flex justify-end">
+                      <button onClick={() => setVerGraficos(false)} className="px-5 py-2.5 bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider">Fechar Painel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </main>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
