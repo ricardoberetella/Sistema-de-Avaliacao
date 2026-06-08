@@ -7,7 +7,7 @@ interface LinhaAlunoAvaliacaoProps {
   capacidadeId: string;
   handleExcluirAluno: (alunoId: string, nomeAluno: string) => void;
   handleEditarAluno: (alunoId: string, nomeAtual: string) => void;
-  handleDefinirRubrica: (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => void;
+  handleDefinirRubrica: (alunoId: string, capacidadeId: string, nivel: NivelDesempenho | '') => void;
   handleMudarNotaNumerica: (alunoId: string, capacidadeId: string, valor: string) => void;
   handleMudarObservacao: (alunoId: string, capacidadeId: string, texto: string) => void;
 }
@@ -71,7 +71,7 @@ export default function LinhaAlunoAvaliacao({
       {/* Controles de Notas e Rubricas */}
       <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-slate-100">
         
-        {/* Seleção de Rubricas Semafóricas */}
+        {/* Seleção de Rubricas Semafóricas com comportamento de desmarcar */}
         <div className="flex items-center gap-1.5">
           {rubricas.map((nivel) => {
             const ativo = rubricaAtual === nivel;
@@ -79,7 +79,10 @@ export default function LinhaAlunoAvaliacao({
               <button
                 key={nivel}
                 type="button"
-                onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, nivel)}
+                onClick={() => {
+                  // Se já estiver ativo, passa vazio para desmarcar. Caso contrário, define o nível.
+                  handleDefinirRubrica(aluno.id, capacidadeId, ativo ? '' : nivel);
+                }}
                 className={`w-14 h-9 font-black text-xs rounded-xl border-2 uppercase transition-all ${
                   ativo ? getCorRubrica(nivel) : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
                 }`}
@@ -114,7 +117,7 @@ export default function LinhaAlunoAvaliacao({
         </label>
         <textarea
           value={observacao}
-          onChange={(e) => handleMudarObservacao(aluno.id, capacidadId, e.target.value)}
+          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full min-h-[70px] p-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 resize-y focus:outline-none"
         />
