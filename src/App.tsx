@@ -51,8 +51,7 @@ export default function App() {
           turmaId: dados.turmaId || 'MA',
           avaliacoes: dados.avaliacoes || {},
           observacoes: dados.observacoes || {},
-          notesNumericas: dados.notesNumericas || {}, // Mantido por compatibilidade histórica se houver
-          notasNumericas: dados.notasNumericas || {}
+          notasNumericas: dados.notasNumericas || dados.notesNumericas || {}
         });
       });
       listaAlunos.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -97,7 +96,6 @@ export default function App() {
   }, []);
 
   const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => {
-    // Atualiza apenas a avaliação por critérios (rubricas), preservando intocadas as notas de 0 a 100
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
         const mapAvaliacoes = a.avaliacoes || {};
@@ -111,10 +109,7 @@ export default function App() {
           novasAvaliacoes[capacidadeId] = nivel;
         }
         
-        return { 
-          ...a, 
-          avaliacoes: novasAvaliacoes 
-        };
+        return { ...a, avaliacoes: novasAvaliacoes };
       }
       return a;
     }));
@@ -146,26 +141,6 @@ export default function App() {
   }, []);
 
   const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
-    // Trata limpeza do campo
-    if (valor === '') {
-      setAlunos(prev => prev.map(a => {
-        if (a.id === alunoId) {
-          return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: '' } };
-        }
-        return a;
-      }));
-
-      try {
-        await updateDoc(doc(db, 'alunos', alunoId), {
-          [`notasNumericas.${capacidadeId}`]: ''
-        });
-      } catch (error) {
-        console.error("Erro ao limpar valor da nota:", error);
-      }
-      return;
-    }
-
-    // Salva o valor puro (0-100) vindo do InputNota sem misturar com índices de rubricas
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
         return { ...a, notasNumericas: { ...(a.notasNumericas || {}), [capacidadeId]: valor } };
@@ -225,7 +200,7 @@ export default function App() {
             <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic text-white inline-block mb-4 shadow">
               SENAI
             </div>
-            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Avaliação</h2>
+            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Evaluation</h2>
             <p className="text-blue-200 text-xs mt-1 font-bold">Mecânico de Usinagem Convencional</p>
           </div>
 
