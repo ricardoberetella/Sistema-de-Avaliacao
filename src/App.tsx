@@ -100,7 +100,7 @@ export default function App() {
       if (a.id === alunoId) {
         const mapAvaliacoes = a.avaliacoes || {};
         const novasAvaliacoes = { ...mapAvaliacoes, [capacidadeId]: nivel };
-        return { ...a, avliaçoes: novasAvaliacoes };
+        return { ...a, avaliacoes: novasAvaliacoes }; // Corrigido erro de digitação aqui
       }
       return a;
     }));
@@ -273,24 +273,24 @@ export default function App() {
                     ))}
                   </div>
                   
-                  {/* INFORMAÇÕES SOBRE AS RUBRICAS (CONFORME PRINT) + BOTÃO FECHAR */}
+                  {/* INFORMAÇÕES SOBRE AS RUBRICAS + BOTÃO FECHAR */}
                   <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                     <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
                       <div className="border-r border-slate-100 pr-2">
-                        <span className="font-black text-slate-500 block uppercase mb-0.5">NSA</span>
-                        Não consegue executar as operações básicas de forma satisfatória ou segura, mesmo com apoio.
+                        <span className="font-black text-red-600 block uppercase mb-0.5">NSA</span>
+                        Não consegue executar as operações básicas de forma satisfatória ou segura, mesmo com apoio. [Média &lt; 50]
                       </div>
                       <div className="border-r border-slate-100 px-2">
-                        <span className="font-black text-amber-600 block uppercase mb-0.5">APO</span>
-                        Executa demonstrando insegurança e comete erros frequentes, necessitando de intervenção constante.
+                        <span className="font-black text-red-600 block uppercase mb-0.5">APO</span>
+                        Executa demonstrando insegurança e comete erros frequentes, necessitando de intervenção constante. [Média &lt; 50]
                       </div>
                       <div className="border-r border-slate-100 px-2">
-                        <span className="font-black text-blue-600 block uppercase mb-0.5">PAR</span>
-                        Executa as operações, mas precisa de orientação pontual do docente para corrigir a técnica.
+                        <span className="font-black text-emerald-600 block uppercase mb-0.5">PAR</span>
+                        Executa as operações, mas precisa de orientação pontual do docente para corrigir a técnica. [Média &ge; 50]
                       </div>
                       <div className="pl-2">
                         <span className="font-black text-emerald-600 block uppercase mb-0.5">AUT</span>
-                        Executa com total autonomia e segurança, atingindo a precisão dimensional e bom acabamento.
+                        Executa com total autonomia e segurança, atingindo a precisão dimensional e bom acabamento. [Média &ge; 50]
                       </div>
                     </div>
                     
