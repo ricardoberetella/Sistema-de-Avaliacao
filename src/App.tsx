@@ -25,7 +25,6 @@ export default function App() {
   const capacitiesFiltradas = CAPACIDADES_OFICIAIS.filter(c => c.ucId === ucAtiva);
   const alunosDaTurma = alunos.filter(a => a.turmaId === turmaAtiva);
 
-  // Mapeamento dos nomes por extenso das UCs para o cabeçalho do PDF
   const nomesUC: Record<UCId, string> = {
     FUSI: 'Fresagem Universal e CNC',
     CRD: 'Cálculo Técnico e Desenho Mecânico',
@@ -156,7 +155,6 @@ export default function App() {
     }
   }, []);
 
-  // Calcula a quantidade de cada rubrica de uma capacidade específica
   const getContagemRubricas = (capId: string) => {
     const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     alunosDaTurma.forEach(a => {
@@ -169,7 +167,7 @@ export default function App() {
     return contagem;
   };
 
-  // 1. CONTADOR GERAL DE RUBRICAS ACUMULADAS NA UC INTEIRA
+  // Cálculo para o dashboard de estatísticas
   const totalGeralRubricasUC = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
   capacitiesFiltradas.forEach(cap => {
     const c = getContagemRubricas(cap.id);
@@ -179,21 +177,18 @@ export default function App() {
     totalGeralRubricasUC.AUT += c.AUT;
   });
 
-  const somaGeralAbsoluta = totalGeralRubricasUC.NSA + totalGeralRubricasUC.APO + totalGeralRubricasUC.PAR + totalGeralRubricasUC.AUT;
+  const { NSA, APO, PAR, AUT } = totalGeralRubricasUC;
+  const somaGeralAbsoluta = NSA + APO + PAR + AUT;
 
   const obterPorcentagemGeral = (valor: number) => {
     if (somaGeralAbsoluta === 0) return 0;
     return (valor / somaGeralAbsoluta) * 100;
   };
 
-  const exportarRelatorioPDF = () => {
-    window.print();
-  };
-
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-800 font-sans antialiased">
       
-      {/* 3. LAYOUT EXCLUSIVO DE IMPRESSÃO (FICA OCULTO NA TELA DO PC/CELULAR) */}
+      {/* ESPELHO EXCLUSIVO PARA IMPRESSÃO */}
       <div className="hidden print:block p-8 bg-white text-black min-h-screen">
         <div className="flex items-center justify-between border-b-4 border-[#004fa3] pb-4 mb-6">
           <div className="flex items-center gap-4">
@@ -224,7 +219,7 @@ export default function App() {
           </thead>
           <tbody>
             {alunosDaTurma.map(aluno => (
-              <tr key={aluno.id} className="hover:bg-slate-50">
+              <tr key={aluno.id}>
                 <td className="border border-slate-300 p-2 font-bold uppercase">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
                   const rubrica = aluno.avaliacoes?.[cap.id] || '-';
@@ -242,14 +237,9 @@ export default function App() {
             ))}
           </tbody>
         </table>
-
-        <div className="mt-8 border-t border-slate-200 pt-4 flex justify-between text-[10px] text-slate-400 font-bold uppercase">
-          <p>Série Metódica Ocupacional (SMO) - SENAI-SP</p>
-          <p>Assinatura do Instrutor Responsável: ___________________________</p>
-        </div>
       </div>
 
-      {/* CONTEÚDO VISUAL DA TELA DO SISTEMA */}
+      {/* PAINEL WEB DO SISTEMA */}
       <div className="print:hidden">
         {!autenticado ? (
           <div className="min-h-screen bg-[#f4f7fc] flex items-center justify-center p-4">
@@ -309,13 +299,11 @@ export default function App() {
             </header>
 
             <main className="p-8 max-w-[1600px] mx-auto">
-              
-              {/* BOTÕES DE INTERAÇÃO E CAMPO ADICIONAR */}
-              <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                 <div className="flex items-center gap-3">
                   <h2 className="text-3xl font-black italic text-[#004fa3] uppercase">TURMA {turmaAtiva}</h2>
-                  <button onClick={() => setVerGraficos(true)} className="px-4 h-9 bg-blue-600 text-white font-black text-[10px] rounded-xl uppercase tracking-wider shadow hover:bg-blue-700 transition-colors">📊 Estatísticas</button>
-                  <button onClick={exportarRelatorioPDF} className="px-4 h-9 bg-slate-700 text-white font-black text-[10px] rounded-xl uppercase tracking-wider shadow hover:bg-slate-600 transition-colors">PDF 📄</button>
+                  <button onClick={() => setVerGraficos(true)} className="px-4 h-9 bg-blue-600 text-white font-black text-[10px] rounded-xl uppercase tracking-wider shadow">📊 Estatísticas</button>
+                  <button onClick={() => window.print()} className="px-4 h-9 bg-slate-700 text-white font-black text-[10px] rounded-xl uppercase tracking-wider shadow">PDF 📄</button>
                 </div>
                 <form onSubmit={handleAddAluno} className="flex items-center gap-3">
                   <input type="text" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="NOME DO ALUNO..." className="w-full sm:w-64 h-[44px] px-4 bg-white border-2 border-red-600 rounded-xl focus:outline-none text-xs font-bold" />
@@ -323,37 +311,20 @@ export default function App() {
                 </form>
               </div>
 
-              {/* 1. PAINEL DE RUBRICAS GERAIS DA UNIDADE CURRICULAR (ACIMA DO PROGRESSO) */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-8">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Totalizadores Acumulados da Unidade Curricular ({ucAtiva})</div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-red-50 border border-red-100 p-4 rounded-xl flex flex-col justify-center items-center">
-                    <span className="text-xs font-black text-red-600 uppercase">NSA TOTAL</span>
-                    <span className="text-2xl font-black text-red-700 mt-1">{totalGeralRubricasUC.NSA}</span>
-                  </div>
-                  <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex flex-col justify-center items-center">
-                    <span className="text-xs font-black text-orange-600 uppercase">APO TOTAL</span>
-                    <span className="text-2xl font-black text-orange-700 mt-1">{totalGeralRubricasUC.APO}</span>
-                  </div>
-                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex flex-col justify-center items-center">
-                    <span className="text-xs font-black text-blue-600 uppercase">PAR TOTAL</span>
-                    <span className="text-2xl font-black text-blue-700 mt-1">{totalGeralRubricasUC.PAR}</span>
-                  </div>
-                  <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex flex-col justify-center items-center">
-                    <span className="text-xs font-black text-emerald-600 uppercase">AUT TOTAL</span>
-                    <span className="text-2xl font-black text-emerald-700 mt-1">{totalGeralRubricasUC.AUT}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARDS DAS CAPACIDADES TÉCNICAS */}
+              {/* LISTA DE CAPACIDADES DA UNIDADE CURRICULAR */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {capacitiesFiltradas.map((cap) => (
-                  <CapacidadeCard key={cap.id} capacidade={cap} contagemRubricas={getContagemRubricas(cap.id)} totalAlunos={alunosDaTurma.length} onClick={() => setCapSelecionada(cap)} />
+                  <CapacidadeCard 
+                    key={cap.id} 
+                    capacidade={cap} 
+                    contagemRubricas={getContagemRubricas(cap.id)} 
+                    totalAlunos={alunosDaTurma.length} 
+                    onClick={() => setCapSelecionada(cap)} 
+                  />
                 ))}
               </div>
 
-              {/* DIÁRIO MODAL COMPLEMENTAR */}
+              {/* DIÁRIO MODAL */}
               {capSelecionada && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white w-full max-w-6xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -384,15 +355,13 @@ export default function App() {
                         <div><span className="font-black text-emerald-600 block uppercase">PAR</span>Executa as operações, mas precisa de orientação pontual do docente.</div>
                         <div><span className="font-black text-emerald-600 block uppercase">AUT</span>Executa com total autonomia e segurança, atingindo precisão dimensional.</div>
                       </div>
-                      <div className="flex items-center justify-end">
-                        <button onClick={() => setCapSelecionada(null)} className="px-6 h-[44px] bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider whitespace-nowrap hover:bg-slate-700 transition-colors">Fechar Diário</button>
-                      </div>
+                      <button onClick={() => setCapSelecionada(null)} className="px-6 h-[44px] bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider">Fechar Diário</button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 2. MODAL DE ESTATÍSTICAS DETALHADO (FUNCIONANDO) */}
+              {/* MODAL DE ESTATÍSTICAS */}
               {verGraficos && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white w-full max-w-3xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col">
@@ -409,59 +378,27 @@ export default function App() {
                         <div className="text-center py-12 text-slate-400 font-bold uppercase text-xs">Nenhuma avaliação realizada nesta Unidade Curricular até o momento.</div>
                       ) : (
                         <div className="space-y-5">
-                          {/* GRÁFICO BARRA - AUT */}
                           <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
-                              <span>Autonomia (AUT)</span>
-                              <span>{totalGeralRubricasUC.AUT} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.AUT).toFixed(1)}%)</span>
-                            </div>
-                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
-                              <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.AUT)}%` }}></div>
-                            </div>
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700"><span>Autonomia (AUT)</span><span>{AUT} ({obterPorcentagemGeral(AUT).toFixed(1)}%)</span></div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden"><div className="h-full bg-emerald-500" style={{ width: `${obterPorcentagemGeral(AUT)}%` }}></div></div>
                           </div>
-
-                          {/* GRÁFICO BARRA - PAR */}
                           <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
-                              <span>Parcialmente (PAR)</span>
-                              <span>{totalGeralRubricasUC.PAR} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.PAR).toFixed(1)}%)</span>
-                            </div>
-                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
-                              <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.PAR)}%` }}></div>
-                            </div>
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700"><span>Parcialmente (PAR)</span><span>{PAR} ({obterPorcentagemGeral(PAR).toFixed(1)}%)</span></div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden"><div className="h-full bg-blue-500" style={{ width: `${obterPorcentagemGeral(PAR)}%` }}></div></div>
                           </div>
-
-                          {/* GRÁFICO BARRA - APO */}
                           <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
-                              <span>Com Apoio (APO)</span>
-                              <span>{totalGeralRubricasUC.APO} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.APO).toFixed(1)}%)</span>
-                            </div>
-                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
-                              <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.APO)}%` }}></div>
-                            </div>
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700"><span>Com Apoio (APO)</span><span>{APO} ({obterPorcentagemGeral(APO).toFixed(1)}%)</span></div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden"><div className="h-full bg-orange-500" style={{ width: `${obterPorcentagemGeral(APO)}%` }}></div></div>
                           </div>
-
-                          {/* GRÁFICO BARRA - NSA */}
                           <div className="space-y-1">
-                            <div className="flex justify-between text-xs font-black uppercase text-slate-700">
-                              <span>Não Satisfeito (NSA)</span>
-                              <span>{totalGeralRubricasUC.NSA} lançamentos ({obterPorcentagemGeral(totalGeralRubricasUC.NSA).toFixed(1)}%)</span>
-                            </div>
-                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden">
-                              <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${obterPorcentagemGeral(totalGeralRubricasUC.NSA)}%` }}></div>
-                            </div>
-                          </div>
-
-                          <div className="pt-4 border-t border-slate-200 flex justify-between text-xs font-black uppercase text-slate-500">
-                            <span>Total de Avaliações Efetuadas:</span>
-                            <span>{somaGeralAbsoluta}</span>
+                            <div className="flex justify-between text-xs font-black uppercase text-slate-700"><span>Não Satisfeito (NSA)</span><span>{NSA} ({obterPorcentagemGeral(NSA).toFixed(1)}%)</span></div>
+                            <div className="w-full h-5 bg-slate-200 rounded-lg overflow-hidden"><div className="h-full bg-red-500" style={{ width: `${obterPorcentagemGeral(NSA)}%` }}></div></div>
                           </div>
                         </div>
                       )}
                     </div>
                     <div className="p-4 bg-slate-100 flex justify-end">
-                      <button onClick={() => setVerGraficos(false)} className="px-5 py-2.5 bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider">Fechar Painel</button>
+                      <button onClick={() => setVerGraficos(false)} className="px-5 py-2.5 bg-slate-800 text-white font-black text-xs rounded-xl uppercase">Fechar Painel</button>
                     </div>
                   </div>
                 </div>
