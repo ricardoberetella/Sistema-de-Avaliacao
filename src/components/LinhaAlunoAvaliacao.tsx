@@ -55,13 +55,20 @@ export default function LinhaAlunoAvaliacao({
         </div>
 
         <div className="flex flex-wrap items-center gap-6">
-          {/* CRITÉRIOS OFICIAIS SMO - CORRIGIDO AQUI */}
+          {/* CRITÉRIOS OFICIAIS COM CORES DINÂMICAS REQUISITADAS */}
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
             {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
               const ativo = rubricaAtiva === nivel;
-              let corAtivo = 'bg-blue-600 text-white';
-              if (nivel === 'AUT') corAtivo = 'bg-emerald-600 text-white';
-              if (nivel === 'NSA') corAtivo = 'bg-slate-600 text-white';
+              
+              // Define a cor baseada no critério de média (Abaixo de 50 = Vermelho | Acima de 50 = Verde)
+              let corAtivo = 'bg-slate-600 text-white';
+              if (ativo) {
+                if (nivel === 'NSA' || nivel === 'APO') {
+                  corAtivo = 'bg-red-600 text-white shadow-sm';
+                } else if (nivel === 'PAR' || nivel === 'AUT') {
+                  corAtivo = 'bg-emerald-600 text-white shadow-sm';
+                }
+              }
 
               return (
                 <button
@@ -106,7 +113,7 @@ export default function LinhaAlunoAvaliacao({
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Evidências / Observações de Desempenho</label>
         <textarea
           value={obsAtiva}
-          onChange={(e) => handleMudarObservation(aluno.id, capacidadeId, e.target.value)}
+          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none transition-all resize-none h-20"
         />
