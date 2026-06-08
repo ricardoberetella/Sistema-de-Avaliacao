@@ -4,6 +4,7 @@ import { Aluno, NivelDesempenho } from '../types';
 
 interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
+  index: number; // Propriedade adicionada para a numeração
   capacidadeId: string;
   handleExcluirAluno: (alunoId: string, nomeAluno: string) => void;
   handleEditarAluno: (alunoId: string, nomeAtual: string) => void;
@@ -14,6 +15,7 @@ interface LinhaAlunoAvaliacaoProps {
 
 export default function LinhaAlunoAvaliacao({
   aluno,
+  index,
   capacidadeId,
   handleExcluirAluno,
   handleEditarAluno,
@@ -28,7 +30,6 @@ export default function LinhaAlunoAvaliacao({
 
   const rubricas: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
-  // Cores dinâmicas para as rubricas ativas
   const getCorRubrica = (nivel: NivelDesempenho) => {
     switch (nivel) {
       case 'NSA': return 'bg-red-600 text-white border-red-600';
@@ -46,10 +47,13 @@ export default function LinhaAlunoAvaliacao({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Estudante</span>
-          <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">{aluno.nome}</h4>
+          <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+            <span className="text-blue-600 mr-1.5">{String(index).padStart(2, '0')}.</span>
+            {aluno.nome}
+          </h4>
         </div>
 
-        {/* Botões de Ação: Editar e Excluir */}
+        {/* Botões de Ação */}
         <div className="flex items-center gap-2 self-start sm:self-center">
           <button
             type="button"
@@ -70,8 +74,6 @@ export default function LinhaAlunoAvaliacao({
 
       {/* Controles de Notas e Rubricas */}
       <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-slate-100">
-        
-        {/* Seleção de Rubricas Semafóricas com comportamento de desmarcar */}
         <div className="flex items-center gap-1.5">
           {rubricas.map((nivel) => {
             const ativo = rubricaAtual === nivel;
@@ -79,10 +81,7 @@ export default function LinhaAlunoAvaliacao({
               <button
                 key={nivel}
                 type="button"
-                onClick={() => {
-                  // Se já estiver ativo, passa vazio para desmarcar. Caso contrário, define o nível.
-                  handleDefinirRubrica(aluno.id, capacidadeId, ativo ? '' : nivel);
-                }}
+                onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, ativo ? '' : nivel)}
                 className={`w-14 h-9 font-black text-xs rounded-xl border-2 uppercase transition-all ${
                   ativo ? getCorRubrica(nivel) : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
                 }`}
@@ -93,7 +92,6 @@ export default function LinhaAlunoAvaliacao({
           })}
         </div>
 
-        {/* Input de Nota Numérica Opcional */}
         <div className="flex items-center gap-2">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
             Nota Numérica (0-100):
@@ -110,14 +108,14 @@ export default function LinhaAlunoAvaliacao({
         </div>
       </div>
 
-      {/* Campo de Evidências / Observações */}
+      {/* Campo de Evidências */}
       <div className="space-y-1">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
           Evidências / Observações de Desempenho
         </label>
         <textarea
           value={observacao}
-          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
+          onChange={(e) => handleMudarObservation(aluno.id, capacidadeId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full min-h-[70px] p-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 resize-y focus:outline-none"
         />
