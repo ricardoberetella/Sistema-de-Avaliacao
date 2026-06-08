@@ -139,7 +139,6 @@ export default function App() {
   }, []);
 
   const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
-    // CORREÇÃO: Permite campo vazio para que o usuário possa apagar tudo com Backspace
     if (valor === '') {
       setAlunos(prev => prev.map(a => {
         if (a.id === alunoId) {
@@ -158,13 +157,11 @@ export default function App() {
       return;
     }
 
-    // CORREÇÃO: Filtra para aceitar apenas dígitos numéricos, evitando quebras de digitação
     const apenasNumeros = valor.replace(/\D/g, '');
     if (apenasNumeros === '') return;
 
     const numValue = parseInt(apenasNumeros, 10);
 
-    // CORREÇÃO: Valida rigorosamente se o número está dentro do intervalo permitido da escala SENAI (0 a 100)
     if (numValue >= 0 && numValue <= 100) {
       const valorFinal = numValue.toString();
 
@@ -228,7 +225,7 @@ export default function App() {
             <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl tracking-tighter italic text-white inline-block mb-4 shadow">
               SENAI
             </div>
-            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Avaliação</h2>
+            <h2 className="text-white text-md font-black uppercase tracking-wider block">Sistema de Evaluation</h2>
             <p className="text-blue-200 text-xs mt-1 font-bold">Mecânico de Usinagem Convencional</p>
           </div>
 
@@ -338,7 +335,7 @@ export default function App() {
                   {alunosDaTurma.length === 0 ? (
                     <p className="text-xs font-bold text-slate-400 text-center py-12 bg-white rounded-xl border border-dashed border-slate-200">Nenhum aluno cadastrado.</p>
                   ) : (
-                    <alunosDaTurma.map((aluno) => (
+                    alunosDaTurma.map((aluno) => (
                       <LinhaAlunoAvaliacao 
                         key={aluno.id}
                         aluno={aluno}
