@@ -5,9 +5,10 @@ import { Aluno, NivelDesempenho } from '../types';
 interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
   capacidadeId: string;
-  handleExcluirAluno: (id: string, nome: string) => void;
-  handleMudarNotaNumerica: (alunoId: string, capacidadeId: string, valor: string) => void;
+  handleExcluirAluno: (alunoId: string, nomeAluno: string) => void;
+  handleEditarAluno: (alunoId: string, nomeAtual: string) => void;
   handleDefinirRubrica: (alunoId: string, capacidadeId: string, nivel: NivelDesempenho) => void;
+  handleMudarNotaNumerica: (alunoId: string, capacidadeId: string, valor: string) => void;
   handleMudarObservacao: (alunoId: string, capacidadeId: string, texto: string) => void;
 }
 
@@ -15,109 +16,110 @@ export default function LinhaAlunoAvaliacao({
   aluno,
   capacidadeId,
   handleExcluirAluno,
-  handleMudarNotaNumerica,
+  handleEditarAluno,
   handleDefinirRubrica,
+  handleMudarNotaNumerica,
   handleMudarObservacao,
 }: LinhaAlunoAvaliacaoProps) {
   
-  const avaliacoes = aluno.avaliacoes || {};
-  const observacoes = aluno.observacoes || {};
-  const notasNumericas = aluno.notasNumericas || {};
+  const rubricaAtual = aluno.avaliacoes?.[capacidadeId] || null;
+  const notaNumerica = aluno.notasNumericas?.[capacidadeId] || '';
+  const observacao = aluno.observacoes?.[capacidadeId] || '';
 
-  const rubricaAtiva = avaliacoes[capacidadeId] || null;
-  const obsAtiva = observacoes[capacidadeId] || '';
-  const notaAtiva = notasNumericas[capacidadeId] || '';
+  const rubricas: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
-  const abrirPromptNota = () => {
-    const resposta = window.prompt(`Digite a nota de 0 a 100 para ${aluno.nome}:`, notaAtiva);
-    
-    if (resposta === null) return;
-
-    if (resposta === '') {
-      handleMudarNotaNumerica(aluno.id, capacidadeId, '');
-      return;
-    }
-
-    const num = parseInt(resposta, 10);
-    if (!isNaN(num) && num >= 0 && num <= 100) {
-      handleMudarNotaNumerica(aluno.id, capacidadeId, num.toString());
-    } else {
-      window.alert('Por favor, digite um número válido entre 0 e 100.');
+  // Cores dinâmicas para as rubricas ativas
+  const getCorRubrica = (nivel: NivelDesempenho) => {
+    switch (nivel) {
+      case 'NSA': return 'bg-red-600 text-white border-red-600';
+      case 'APO': return 'bg-orange-500 text-white border-orange-500';
+      case 'PAR': return 'bg-blue-600 text-white border-blue-600';
+      case 'AUT': return 'bg-emerald-600 text-white border-emerald-600';
+      default: return 'bg-white text-slate-600 border-slate-200';
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      
+      {/* Cabeçalho da Linha do Aluno */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Estudante</span>
-          <span className="text-sm font-black text-slate-800 uppercase">{aluno.nome}</span>
+          <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">{aluno.nome}</h4>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6">
-          {/* CRITÉRIOS OFICIAIS COM CORES DINÂMICAS REQUISITADAS */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-            {(['NSA', 'APO', 'PAR', 'AUT'] as NivelDesempenho[]).map((nivel) => {
-              const ativo = rubricaAtiva === nivel;
-              
-              // Define a cor baseada no critério de média (Abaixo de 50 = Vermelho | Acima de 50 = Verde)
-              let corAtivo = 'bg-slate-600 text-white';
-              if (ativo) {
-                if (nivel === 'NSA' || nivel === 'APO') {
-                  corAtivo = 'bg-red-600 text-white shadow-sm';
-                } else if (nivel === 'PAR' || nivel === 'AUT') {
-                  corAtivo = 'bg-emerald-600 text-white shadow-sm';
-                }
-              }
-
-              return (
-                <button
-                  key={nivel}
-                  type="button"
-                  onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, nivel)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${ativo ? corAtivo : 'text-slate-600 hover:bg-slate-200'}`}
-                >
-                  {nivel}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* CAMPO DE NOTA SIMPLES */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={abrirPromptNota}
-              className="px-3 h-[36px] bg-slate-800 text-white font-black text-[10px] rounded-xl uppercase hover:bg-slate-700 transition-colors"
-            >
-              Nota
-            </button>
-            <div className="w-12 h-[36px] bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center font-black text-xs text-slate-800">
-              {notaAtiva || '-'}
-            </div>
-          </div>
-
-          {/* EXCLUIR ESTUDANTE */}
+        {/* Botões de Ação: Editar e Excluir */}
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            type="button"
+            onClick={() => handleEditarAluno(aluno.id, aluno.nome)}
+            className="px-3 h-8 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-[10px] rounded-lg uppercase tracking-wider transition-colors flex items-center gap-1"
+          >
+            ✏️ Editar
+          </button>
           <button
             type="button"
             onClick={() => handleExcluirAluno(aluno.id, aluno.nome)}
-            className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors text-xs font-bold uppercase"
+            className="px-3 h-8 bg-red-5 font-black text-[10px] text-red-600 hover:bg-red-100 rounded-lg uppercase tracking-wider transition-colors"
           >
-            Excluir 🗑️
+            Excluir Aluno 🗑️
           </button>
         </div>
       </div>
 
-      {/* EVIDÊNCIAS / OBSERVAÇÕES */}
+      {/* Controles de Notas e Rubricas */}
+      <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-slate-100">
+        
+        {/* Seleção de Rubricas Semafóricas */}
+        <div className="flex items-center gap-1.5">
+          {rubricas.map((nivel) => {
+            const ativo = rubricaAtual === nivel;
+            return (
+              <button
+                key={nivel}
+                type="button"
+                onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, nivel)}
+                className={`w-14 h-9 font-black text-xs rounded-xl border-2 uppercase transition-all ${
+                  ativo ? getCorRubrica(nivel) : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
+                }`}
+              >
+                {nivel}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Input de Nota Numérica Opcional */}
+        <div className="flex items-center gap-2">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
+            Nota Numérica (0-100):
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={notaNumerica}
+            onChange={(e) => handleMudarNotaNumerica(aluno.id, capacidadeId, e.target.value)}
+            className="w-20 h-9 px-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl font-bold text-center text-xs text-slate-800"
+            placeholder="-"
+          />
+        </div>
+      </div>
+
+      {/* Campo de Evidências / Observações */}
       <div className="space-y-1">
-        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Evidências / Observações de Desempenho</label>
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+          Evidências / Observações de Desempenho
+        </label>
         <textarea
-          value={obsAtiva}
-          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
+          value={observacao}
+          onChange={(e) => handleMudarObservacao(aluno.id, capacidadId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
-          className="w-full p-3 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none transition-all resize-none h-20"
+          className="w-full min-h-[70px] p-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 resize-y focus:outline-none"
         />
       </div>
+
     </div>
   );
 }
