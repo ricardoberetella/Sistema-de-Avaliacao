@@ -4,7 +4,7 @@ import { Aluno, NivelDesempenho } from '../types';
 
 interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
-  index: number; // Propriedade adicionada para a numeração
+  index: number;
   capacidadeId: string;
   handleExcluirAluno: (alunoId: string, nomeAluno: string) => void;
   handleEditarAluno: (alunoId: string, nomeAtual: string) => void;
@@ -115,7 +115,7 @@ export default function LinhaAlunoAvaliacao({
         </label>
         <textarea
           value={observacao}
-          onChange={(e) => handleMudarObservation(aluno.id, capacidadeId, e.target.value)}
+          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full min-h-[70px] p-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 resize-y focus:outline-none"
         />
