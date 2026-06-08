@@ -10,8 +10,10 @@ export default function InputNota({
   valorInicial,
   onSalvar,
 }: InputNotaProps) {
+  // Mantém o controle do que está sendo digitado sem sofrer interferência do estado do App
   const [valor, setValor] = useState('');
 
+  // Sincroniza o valor do input apenas quando o valor inicial vindo do Firebase mudar externamente
   useEffect(() => {
     setValor(valorInicial || '');
   }, [valorInicial]);
@@ -19,38 +21,47 @@ export default function InputNota({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const novo = e.target.value;
 
-    // 1. Permite campo vazio para que o usuário possa apagar com Backspace
+    // Permite que o campo fique vazio (usuário apagando com backspace)
     if (novo === '') {
       setValor('');
       return;
     }
 
-    // 2. Remove qualquer caractere que não seja número (bloqueia letras, pontos e vírgulas)
+    // Filtra e mantém apenas dígitos numéricos (remove letras, pontos, vírgulas)
     const apenasNumeros = novo.replace(/\D/g, '');
     if (apenasNumeros === '') return;
 
-    // 3. Converte para inteiro e valida o teto da escala SENAI (máximo 100)
+    // Converte para inteiro para validar os limites permitidos (0 a 100)
     const numero = parseInt(apenasNumeros, 10);
     if (!isNaN(numero) && numero >= 0 && numero <= 100) {
       setValor(numero.toString());
     }
   };
 
-  const salvar = () => {
-    if (valor.trim() === '') {
-      onSalvar('');
+  const executarSalvar = () => {
+    const valorLimpo = valor.trim();
+
+    // Se o usuário limpou o campo, salva como vazio no banco
+    if (valorLimpo === '') {
+      if (valorInicial !== '') {
+        onSalvar('');
+      }
       return;
     }
 
-    const numero = parseInt(valor, 10);
+    const numero = parseInt(valorLimpo, 10);
     if (isNaN(numero)) return;
 
-    // Garante os limites de segurança de 0 a 100
+    // Garante a trava de segurança regulamentar de 0 a 100
     const limitado = Math.max(0, Math.min(100, numero));
     const textoFinal = String(limitado);
 
     setValor(textoFinal);
-    onSalvar(textoFinal);
+
+    // Só envia para o App/Firebase se o valor de fato mudou, evitando requisições redundantes
+    if (textoFinal !== valorInicial) {
+      onSalvar(textoFinal);
+    }
   };
 
   return (
@@ -58,20 +69,20 @@ export default function InputNota({
       type="text"
       inputMode="numeric"
       pattern="[0-9]*"
-      maxLength={3} // Impede digitar mais de 3 caracteres (o máximo é 100)
+      maxLength={3} // Impede fisicamente digitar mais de 3 caracteres (Teto de 100)
       value={valor}
       onChange={handleChange}
-      onBlur={salvar}
+      onBlur={executarSalvar} // Salva apenas ao sair do campo
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
-          // Tira o foco do input para acionar o salvamento visual padrão do sistema
-          e.currentTarget.blur();
+          executarSalvar();
+          e.currentTarget.blur(); // Remove o foco para aplicar o fechamento visual padrão
         }
       }}
       placeholder="0-100"
       autoComplete="off"
       spellCheck={false}
-      className="w-24 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none"
+      className="w-24 h-[38px] text-center bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white rounded-xl font-black text-xs text-slate-800 focus:outline-none transition-all shadow-sm"
     />
   );
 }
