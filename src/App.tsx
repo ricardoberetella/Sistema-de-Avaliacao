@@ -99,17 +99,8 @@ export default function App() {
     setAlunos(prev => prev.map(a => {
       if (a.id === alunoId) {
         const mapAvaliacoes = a.avaliacoes || {};
-        const notaAtual = mapAvaliacoes[capacidadeId];
-        const novaNota = notaAtual === nivel ? null : nivel;
-        const novasAvaliacoes = { ...mapAvaliacoes };
-        
-        if (novaNota === null) {
-          delete novasAvaliacoes[capacidadeId];
-        } else {
-          novasAvaliacoes[capacidadeId] = nivel;
-        }
-        
-        return { ...a, avaliacoes: novasAvaliacoes };
+        const novasAvaliacoes = { ...mapAvaliacoes, [capacidadeId]: nivel };
+        return { ...a, avliaçoes: novasAvaliacoes };
       }
       return a;
     }));
@@ -168,17 +159,6 @@ export default function App() {
     });
     return contagem;
   };
-
-  const totalGeralRubricas = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
-  capacitiesFiltradas.forEach(cap => {
-    const c = getContagemRubricas(cap.id);
-    totalGeralRubricas.NSA += c.NSA;
-    totalGeralRubricas.APO += c.APO;
-    totalGeralRubricas.PAR += c.PAR;
-    totalGeralRubricas.AUT += c.AUT;
-  });
-
-  const somaTotalRubricas = totalGeralRubricas.NSA + totalGeralRubricas.APO + totalGeralRubricas.PAR + totalGeralRubricas.AUT;
 
   const exportarRelatorioPDF = () => {
     const tituloOriginal = document.title;
@@ -267,7 +247,9 @@ export default function App() {
 
             {capSelecionada && (
               <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-white w-full max-w-5xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                <div className="bg-white w-full max-w-6xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                  
+                  {/* TOPO MODAL */}
                   <div className="p-6 bg-[#004fa3] text-white flex justify-between items-start">
                     <div>
                       <span className="text-xs font-black text-blue-200 uppercase">{capSelecionada.codigo} - DIÁRIO</span>
@@ -275,6 +257,8 @@ export default function App() {
                     </div>
                     <button onClick={() => setCapSelecionada(null)} className="text-white bg-black/20 w-8 h-8 rounded-full">✕</button>
                   </div>
+                  
+                  {/* LISTA DE ALUNOS */}
                   <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
                     {alunosDaTurma.map((aluno) => (
                       <LinhaAlunoAvaliacao 
@@ -288,9 +272,35 @@ export default function App() {
                       />
                     ))}
                   </div>
-                  <div className="p-4 bg-slate-100 flex justify-end">
-                    <button onClick={() => setCapSelecionada(null)} className="px-5 py-2 bg-slate-700 text-white font-black text-xs rounded-xl uppercase">Fechar</button>
+                  
+                  {/* INFORMAÇÕES SOBRE AS RUBRICAS (CONFORME PRINT) + BOTÃO FECHAR */}
+                  <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                    <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
+                      <div className="border-r border-slate-100 pr-2">
+                        <span className="font-black text-slate-500 block uppercase mb-0.5">NSA</span>
+                        Não consegue executar as operações básicas de forma satisfatória ou segura, mesmo com apoio.
+                      </div>
+                      <div className="border-r border-slate-100 px-2">
+                        <span className="font-black text-amber-600 block uppercase mb-0.5">APO</span>
+                        Executa demonstrando insegurança e comete erros frequentes, necessitando de intervenção constante.
+                      </div>
+                      <div className="border-r border-slate-100 px-2">
+                        <span className="font-black text-blue-600 block uppercase mb-0.5">PAR</span>
+                        Executa as operações, mas precisa de orientação pontual do docente para corrigir a técnica.
+                      </div>
+                      <div className="pl-2">
+                        <span className="font-black text-emerald-600 block uppercase mb-0.5">AUT</span>
+                        Executa com total autonomia e segurança, atingindo a precisão dimensional e bom acabamento.
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-end">
+                      <button onClick={() => setCapSelecionada(null)} className="px-6 h-[44px] bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider whitespace-nowrap hover:bg-slate-700 transition-colors">
+                        Fechar Diário
+                      </button>
+                    </div>
                   </div>
+
                 </div>
               </div>
             )}
