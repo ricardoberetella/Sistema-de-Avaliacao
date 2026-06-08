@@ -1,1 +1,35 @@
+/* src/index.css */
 @import "tailwindcss";
+
+@media print {
+  /* Força o fundo branco e texto preto na impressão */
+  body, html, main, #root {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Oculta absolutamente tudo que tiver a classe print:hidden */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Garante que a tabela use 100% da folha A4 e quebre linhas corretamente */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  /* Remove cabeçalhos e rodapés padrões do navegador (como a URL da página) */
+  @page {
+    size: auto;
+    margin: 15mm 10mm 15mm 10mm;
+  }
+}
