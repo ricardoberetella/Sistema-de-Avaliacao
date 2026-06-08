@@ -207,6 +207,7 @@ export default function App() {
         <table className="w-full border-collapse">
           <thead>
             <tr>
+              <th className="text-left uppercase w-8 text-[10px] font-black text-slate-700">Nº</th>
               <th className="text-left uppercase w-52">Estudante</th>
               {capacitiesFiltradas.map(cap => (
                 <th key={cap.id} className="text-center uppercase">
@@ -217,8 +218,10 @@ export default function App() {
             </tr>
           </thead>
           <tbody>
-            {alunosDaTurma.map(aluno => (
+            {alunosDaTurma.map((aluno, idx) => (
               <tr key={aluno.id}>
+                {/* Numeração da chamada adicionada na tabela de impressão */}
+                <td className="font-bold text-slate-500 text-xs tracking-tight text-left">{String(idx + 1).padStart(2, '0')}</td>
                 <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
                   const rubrica = aluno.avaliacoes?.[cap.id] || '-';
@@ -247,7 +250,6 @@ export default function App() {
                 <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic text-white inline-block mb-3 shadow">
                   SENAI
                 </div>
-                {/* Curso inserido exatamente entre o logo e o título do sistema */}
                 <div className="text-blue-100 text-[11px] font-black uppercase tracking-widest mb-1 mt-1">
                   Mecânico de Usinagem Convencional
                 </div>
@@ -271,7 +273,6 @@ export default function App() {
               <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
                 <div className="bg-red-600 px-5 py-2 rounded-sm skew-x-[-12deg] font-black text-2xl italic">SENAI</div>
                 <div className="text-center lg:text-left flex-1">
-                  {/* Curso adicionado também no cabeçalho interno da aplicação */}
                   <div className="text-blue-200 text-xs font-black uppercase tracking-wider">Mecânico de Usinagem Convencional</div>
                   <h1 className="text-lg md:text-xl font-black uppercase mt-0.5">Sistema de Avaliação</h1>
                   <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
@@ -341,10 +342,11 @@ export default function App() {
                     </div>
                     
                     <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
-                      {alunosDaTurma.map((aluno) => (
+                      {alunosDaTurma.map((aluno, index) => (
                         <LinhaAlunoAvaliacao 
                           key={aluno.id}
                           aluno={aluno}
+                          index={index + 1} // Passando a numeração para o componente de linha
                           capacidadeId={capSelecionada.id}
                           handleExcluirAluno={handleExcluirAluno}
                           handleEditarAluno={handleEditarAluno}
