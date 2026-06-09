@@ -29,8 +29,8 @@ export default function App() {
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   const nomesUC: Record<UCId, string> = {
-    FUSI: 'Fresagem Universal e CNC',
-    CRD: 'Cálculo Técnico e Desenho Mecânico',
+    FUSI: 'Fundamentos da Usinagem',
+    CRD: 'Controle Dimensional',
     LIDT: 'Leitura e Interpretação de Desenho Técnico',
     CIEMA: 'Ciência dos Materiais e Metrologia'
   };
