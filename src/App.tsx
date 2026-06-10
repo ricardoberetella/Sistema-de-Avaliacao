@@ -35,6 +35,32 @@ export default function App() {
     CIEMA: 'Ciência dos Materiais e Metrologia'
   };
 
+  // Função interna para calcular a média de uma UC específica de um aluno
+  const calcularMediaAlunoUC = (aluno: Aluno, ucId: UCId): string => {
+    const notas = aluno.notasNumericas || {};
+    let soma = 0;
+    let qtd = 0;
+
+    CAPACIDADES_OFICIAIS.forEach((cap) => {
+      if (cap.ucId === ucId) {
+        const notaStr = notas[cap.id];
+        if (notaStr && notaStr.trim() !== '') {
+          const valorFloat = parseFloat(notaStr.replace(',', '.'));
+          if (!isNaN(valorFloat)) {
+            soma += valorFloat;
+            qtd += 1;
+          }
+        }
+      }
+    });
+
+    if (qtd > 0) {
+      const media = soma / qtd;
+      return String(Number(media.toFixed(3))).replace('.', ',');
+    }
+    return '-';
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (senhaInput === 'ianes662') {
@@ -204,7 +230,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Tabela 1: Notas e Rubricas Nominais */}
+        {/* Tabela 1: Notas, Rubricas Nominais e Média Final */}
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -216,6 +242,10 @@ export default function App() {
                   <div className="text-[7px] text-slate-500 font-normal">{cap.codigo.split(' ').slice(1).join(' ')}</div>
                 </th>
               ))}
+              {/* Nova coluna adicionada na última posição da tabela */}
+              <th className="text-center uppercase w-24 text-[10px] font-black text-blue-800 bg-slate-50/80 border-l border-slate-200">
+                MÉDIA FINAL
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -235,12 +265,16 @@ export default function App() {
                     </td>
                   );
                 })}
+                {/* Renderização automática do cálculo da Média Final por Estudante */}
+                <td className="text-center font-black text-xs text-blue-900 bg-slate-50/50 border-l border-slate-200/80">
+                  {calcularMediaAlunoUC(aluno, ucAtiva)}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Tabela 2: Legenda Detalhada de Capacidades Técnicas (Adicionada abaixo da principal) */}
+        {/* Tabela 2: Legenda Detalhada de Capacidades Técnicas */}
         <div className="mt-8 border-t-2 border-slate-200 pt-4 avoiding-page-break">
           <h3 className="text-[10px] font-black uppercase text-[#004fa3] tracking-wider mb-2">
             Legenda de Competências e Capacidades Técnicas Avaliadas
