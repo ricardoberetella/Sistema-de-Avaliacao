@@ -149,30 +149,30 @@ export default function App() {
     }
   }, []);
 
-  const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadeId: string, nivel: NivelDesempenho | '') => {
+  const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadId: string, nivel: NivelDesempenho | '') => {
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
-        [`avaliacoes.${capacidadeId}`]: nivel
+        [`avaliacoes.${capacidadId}`]: nivel
       });
     } catch (error) {
       console.error("Erro ao atualizar rubrica:", error);
     }
   }, []);
 
-  const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadeId: string, valor: string) => {
+  const handleMudarNotaNumerica = useCallback(async (alunoId: string, capacidadId: string, valor: string) => {
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
-        [`notasNumericas.${capacidadeId}`]: valor
+        [`notasNumericas.${capacidadId}`]: valor
       });
     } catch (error) {
       console.error("Erro ao salvar nota numérica:", error);
     }
   }, []);
 
-  const handleMudarObservacao = useCallback(async (alunoId: string, capacidadeId: string, texto: string) => {
+  const handleMudarObservacao = useCallback(async (alunoId: string, capacidadId: string, texto: string) => {
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
-        [`observacoes.${capacidadeId}`]: texto
+        [`observacoes.${capacidadId}`]: texto
       });
     } catch (error) {
       console.error("Erro ao salvar observação:", error);
@@ -230,7 +230,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Tabela 1: Notas, Rubricas Nominais e Média Final */}
+        {/* Tabela 1: Notas e Rubricas Nominais */}
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -242,7 +242,6 @@ export default function App() {
                   <div className="text-[7px] text-slate-500 font-normal">{cap.codigo.split(' ').slice(1).join(' ')}</div>
                 </th>
               ))}
-              {/* Nova coluna adicionada na última posição da tabela */}
               <th className="text-center uppercase w-24 text-[10px] font-black text-blue-800 bg-slate-50/80 border-l border-slate-200">
                 MÉDIA FINAL
               </th>
@@ -255,18 +254,25 @@ export default function App() {
                 <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
                   const rubrica = aluno.avaliacoes?.[cap.id] || '-';
-                  const nota = aluno.notasNumericas?.[cap.id] ? `(${aluno.notasNumericas[cap.id]})` : '';
+                  const notaStr = aluno.notasNumericas?.[cap.id] || '';
+                  
                   return (
-                    <td key={cap.id} className="text-center font-bold">
-                      <span className={rubrica === 'NSA' || rubrica === 'APO' ? 'text-red-600' : rubrica === 'PAR' || rubrica === 'AUT' ? 'text-emerald-600' : ''}>
-                        {rubrica || '-'}
-                      </span>
-                      {nota && <span className="text-[8px] text-slate-500 font-normal ml-0.5">{nota}</span>}
+                    <td key={cap.id} className="text-center py-1 border border-slate-200">
+                      {/* Container flexível empilhado para rubrica e nota individual ficarem organizadas */}
+                      <div className="flex flex-col items-center justify-center min-h-[28px]">
+                        <span className={`font-black text-xs ${rubrica === 'NSA' || rubrica === 'APO' ? 'text-red-600' : rubrica === 'PAR' || rubrica === 'AUT' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {rubrica}
+                        </span>
+                        {notaStr && (
+                          <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1 rounded-sm mt-0.5">
+                            {notaStr}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   );
                 })}
-                {/* Renderização automática do cálculo da Média Final por Estudante */}
-                <td className="text-center font-black text-xs text-blue-900 bg-slate-50/50 border-l border-slate-200/80">
+                <td className="text-center font-black text-xs text-blue-900 bg-slate-50/50 border border-slate-200">
                   {calcularMediaAlunoUC(aluno, ucAtiva)}
                 </td>
               </tr>
@@ -416,7 +422,7 @@ export default function App() {
                     
                     <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                       <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
-                        <div><span className="font-black text-red-600 block uppercase">NSA</span>Não consegue executar as operações básicas de forma satisfatória ou segura.</div>
+                        <div><span className="font-black text-red-600 block uppercase">NSA</span>Não consegue executar as operações básicas de forma satisfatória or segura.</div>
                         <div><span className="font-black text-red-600 block uppercase">APO</span>Executa demonstrando insegurança e comete erros frequentes.</div>
                         <div><span className="font-black text-emerald-600 block uppercase">PAR</span>Executa as operações, mas precisa de orientação pontual do docente.</div>
                         <div><span className="font-black text-emerald-600 block uppercase">AUT</span>Executa com total autonomia e segurança, atingindo precisão dimensional.</div>
