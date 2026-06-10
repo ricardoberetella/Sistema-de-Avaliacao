@@ -1,6 +1,8 @@
 // src/components/LinhaAlunoAvaliacao.tsx
 import React from 'react';
 import { Aluno, NivelDesempenho } from '../types';
+import { CAPACIDADES_OFICIAIS } from '../utils';
+import InputNota from './InputNota';
 
 interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
@@ -30,6 +32,44 @@ export default function LinhaAlunoAvaliacao({
 
   const rubricas: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
+  // Função interna para calcular a média de cada Unidade Curricular do aluno
+  const obterMediasPorUC = () => {
+    const notas = aluno.notasNumericas || {};
+    const acumulador: Record<string, { soma: number; qtd: number }> = {
+      FUSI: { soma: 0, qtd: 0 },
+      CRD: { soma: 0, qtd: 0 },
+      LIDT: { soma: 0, qtd: 0 },
+      CIEMA: { soma: 0, qtd: 0 },
+    };
+
+    CAPACIDADES_OFICIAIS.forEach((cap) => {
+      const notaStr = notas[cap.id];
+      if (notaStr && notaStr.trim() !== '') {
+        const valorFloat = parseFloat(notaStr.replace(',', '.'));
+        if (!isNaN(valorFloat) && acumulador[cap.ucId]) {
+          acumulador[cap.ucId].soma += valorFloat;
+          acumulador[cap.ucId].qtd += 1;
+        }
+      }
+    });
+
+    const resultado: Record<string, string> = {};
+    Object.keys(acumulador).forEach((uc) => {
+      const dados = acumulador[uc];
+      if (dados.qtd > 0) {
+        const media = dados.soma / dados.qtd;
+        // Formata mantendo o padrão de vírgula e limitando a até 3 casas decimais
+        resultado[uc] = String(Number(media.toFixed(3))).replace('.', ',');
+      } else {
+        resultado[uc] = '-';
+      }
+    });
+
+    return resultado;
+  };
+
+  const medias = obterMediasPorUC();
+
   const getCorRubrica = (nivel: NivelDesempenho) => {
     switch (nivel) {
       case 'NSA': return 'bg-red-600 text-white border-red-600';
@@ -44,7 +84,7 @@ export default function LinhaAlunoAvaliacao({
     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
       
       {/* Cabeçalho da Linha do Aluno */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Estudante</span>
           <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">
@@ -53,8 +93,18 @@ export default function LinhaAlunoAvaliacao({
           </h4>
         </div>
 
+        {/* Bloco de Médias por UC */}
+        <div className="flex flex-wrap gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const).map((uc) => (
+            <div key={uc} className="text-center px-2.5 py-1 bg-white rounded-lg shadow-2xs border border-slate-200/60">
+              <span className="text-[9px] font-black text-slate-400 block tracking-tight">{uc}</span>
+              <span className="text-xs font-black text-slate-700">{medias[uc]}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Botões de Ação */}
-        <div className="flex items-center gap-2 self-start sm:self-center">
+        <div className="flex items-center gap-2 self-start lg:self-center">
           <button
             type="button"
             onClick={() => handleEditarAluno(aluno.id, aluno.nome)}
@@ -96,14 +146,9 @@ export default function LinhaAlunoAvaliacao({
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
             Nota Numérica (0-100):
           </label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={notaNumerica}
-            onChange={(e) => handleMudarNotaNumerica(aluno.id, capacidadeId, e.target.value)}
-            className="w-20 h-9 px-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl font-bold text-center text-xs text-slate-800"
-            placeholder="-"
+          <InputNota 
+            valorInicial={notaNumerica}
+            onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capacidadeId, novoValor)}
           />
         </div>
       </div>
