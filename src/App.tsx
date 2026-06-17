@@ -204,9 +204,20 @@ export default function App() {
   const { NSA, APO, PAR, AUT } = totalGeralRubricasUC;
   const somaGeralAbsoluta = NSA + APO + PAR + AUT;
 
-  const obtenerPorcentagemGeral = (valor: number) => {
+  const obterPorcentagemGeral = (valor: number) => {
     if (somaGeralAbsoluta === 0) return 0;
     return (valor / somaGeralAbsoluta) * 100;
+  };
+
+  // Função auxiliar para retornar as cores das rubricas e notas de forma idêntica ao sistema
+  const getCorEstiloRubrica = (nivel: string) => {
+    switch (nivel) {
+      case 'NSA': return 'text-red-600 font-black';
+      case 'APO': return 'text-orange-500 font-black';
+      case 'PAR': return 'text-blue-600 font-black';
+      case 'AUT': return 'text-emerald-600 font-black';
+      default: return 'text-slate-400';
+    }
   };
 
   return (
@@ -255,16 +266,17 @@ export default function App() {
                 <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
                   const rubrica = aluno.avaliacoes?.[cap.id] || '-';
-                  const notaStr = aluno.notesNumericas?.[cap.id] || '';
+                  // CORRIGIDO: Modificado de notesNumericas para notasNumericas
+                  const notaStr = aluno.notasNumericas?.[cap.id] || '';
                   
                   return (
                     <td key={cap.id} className="text-center py-1 border border-slate-200">
                       <div className="flex flex-col items-center justify-center min-h-[28px]">
-                        <span className={`font-black text-xs ${rubrica === 'NSA' || rubrica === 'APO' ? 'text-red-600' : rubrica === 'PAR' || rubrica === 'AUT' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        <span className={`text-xs ${getCorEstiloRubrica(rubrica)}`}>
                           {rubrica}
                         </span>
                         {notaStr && (
-                          <span className="text-[9px] font-bold text-slate-600 bg-slate-100 px-1 rounded-sm mt-0.5">
+                          <span className={`text-[9px] px-1 rounded-sm mt-0.5 bg-slate-100 font-black ${getCorEstiloRubrica(rubrica)}`}>
                             {notaStr}
                           </span>
                         )}
@@ -367,6 +379,8 @@ export default function App() {
               </div>
             </header>
 
+            <header />
+
             <main className="p-8 max-w-[1600px] mx-auto">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                 <div className="flex items-center gap-3">
@@ -423,8 +437,8 @@ export default function App() {
                     <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                       <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
                         <div><span className="font-black text-red-600 block uppercase">NSA</span>Não consegue executar as operações básicas de forma satisfatória or segura.</div>
-                        <div><span className="font-black text-red-600 block uppercase">APO</span>Executa demonstrando insegurança e comete erros frequentes.</div>
-                        <div><span className="font-black text-emerald-600 block uppercase">PAR</span>Executa as operações, mas precisa de orientação pontual do docente.</div>
+                        <div><span className="font-black text-orange-500 block uppercase">APO</span>Executa demonstrando insegurança e comete erros frequentes.</div>
+                        <div><span className="font-black text-blue-600 block uppercase">PAR</span>Executa as operações, mas precisa de orientação pontual do docente.</div>
                         <div><span className="font-black text-emerald-600 block uppercase">AUT</span>Executa com total autonomia e segurança, atingindo precisão dimensional.</div>
                       </div>
                       <button onClick={() => setCapSelecionada(null)} className="px-6 h-[44px] bg-slate-800 text-white font-black text-xs rounded-xl uppercase tracking-wider">Fechar Diário</button>
