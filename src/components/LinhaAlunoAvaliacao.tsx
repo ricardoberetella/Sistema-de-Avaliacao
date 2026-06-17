@@ -33,7 +33,7 @@ export default function LinhaAlunoAvaliacao({
   const rubricas: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
   // Função interna para calcular a média de cada Unidade Curricular do aluno
-  const obterMediasPorUC = () => {
+  const obtenerMediasPorUC = () => {
     const notas = aluno.notasNumericas || {};
     const acumulador: Record<string, { soma: number; qtd: number }> = {
       FUSI: { soma: 0, qtd: 0 },
@@ -58,8 +58,8 @@ export default function LinhaAlunoAvaliacao({
       const dados = acumulador[uc];
       if (dados.qtd > 0) {
         const media = dados.soma / dados.qtd;
-        // Formata mantendo o padrão de vírgula e limitando a até 3 casas decimais
-        resultado[uc] = String(Number(media.toFixed(3))).replace('.', ',');
+        // Modificado para arredondar sem casas decimais, mantendo a consistência com o relatório PDF
+        resultado[uc] = String(Math.round(media));
       } else {
         resultado[uc] = '-';
       }
@@ -68,7 +68,7 @@ export default function LinhaAlunoAvaliacao({
     return resultado;
   };
 
-  const medias = obterMediasPorUC();
+  const medias = obtenerMediasPorUC();
 
   const getCorRubrica = (nivel: NivelDesempenho) => {
     switch (nivel) {
