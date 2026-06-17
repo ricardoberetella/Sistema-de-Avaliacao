@@ -35,7 +35,7 @@ export default function App() {
     CIEMA: 'Ciência dos Materiais e Metrologia'
   };
 
-  // Função interna para calcular a média de uma UC específica de um aluno
+  // AJUSTADO: Função interna alterada para arredondar a média sem casas decimais
   const calcularMediaAlunoUC = (aluno: Aluno, ucId: UCId): string => {
     const notas = aluno.notasNumericas || {};
     let soma = 0;
@@ -56,7 +56,8 @@ export default function App() {
 
     if (qtd > 0) {
       const media = soma / qtd;
-      return String(Number(media.toFixed(3))).replace('.', ',');
+      // Realiza o arredondamento matemático para o inteiro mais próximo
+      return String(Math.round(media));
     }
     return '-';
   };
@@ -203,7 +204,7 @@ export default function App() {
   const { NSA, APO, PAR, AUT } = totalGeralRubricasUC;
   const somaGeralAbsoluta = NSA + APO + PAR + AUT;
 
-  const obterPorcentagemGeral = (valor: number) => {
+  const obtenerPorcentagemGeral = (valor: number) => {
     if (somaGeralAbsoluta === 0) return 0;
     return (valor / somaGeralAbsoluta) * 100;
   };
@@ -254,11 +255,10 @@ export default function App() {
                 <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
                   const rubrica = aluno.avaliacoes?.[cap.id] || '-';
-                  const notaStr = aluno.notasNumericas?.[cap.id] || '';
+                  const notaStr = aluno.notesNumericas?.[cap.id] || '';
                   
                   return (
                     <td key={cap.id} className="text-center py-1 border border-slate-200">
-                      {/* Container flexível empilhado para rubrica e nota individual ficarem organizadas */}
                       <div className="flex flex-col items-center justify-center min-h-[28px]">
                         <span className={`font-black text-xs ${rubrica === 'NSA' || rubrica === 'APO' ? 'text-red-600' : rubrica === 'PAR' || rubrica === 'AUT' ? 'text-emerald-600' : 'text-slate-400'}`}>
                           {rubrica}
