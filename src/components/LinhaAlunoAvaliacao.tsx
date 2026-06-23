@@ -18,7 +18,7 @@ interface LinhaAlunoAvaliacaoProps {
 const RUBRICAS_LISTA: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
 // Mantido 'MAPA' conforme a estrutura atual do seu sistema
-const UCS_LISTA = ['FUSI', 'CRD', 'LIDT', 'MAPA'] as const;
+const UCS_LISTA = ['FUSI', 'CRD', 'LIDT', 'MAP'] as const;
 
 const NOTAS_MAPEADAS: Record<NivelDesempenho, string> = {
   NSA: '25',
@@ -51,7 +51,7 @@ export default function LinhaAlunoAvaliacao({
       FUSI: { rubrica: '-', nota: '-' },
       CRD: { rubrica: '-', nota: '-' },
       LIDT: { rubrica: '-', nota: '-' },
-      MAPA: { rubrica: '-', nota: '-' }
+      MAP: { rubrica: '-', nota: '-' }
     };
 
     UCS_LISTA.forEach((ucId) => {
