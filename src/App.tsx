@@ -35,31 +35,45 @@ export default function App() {
     CIEMA: 'Ciência dos Materiais e Metrologia'
   };
 
-  // AJUSTADO: Função interna alterada para arredondar a média sem casas decimais
-  const calcularMediaAlunoUC = (aluno: Aluno, ucId: UCId): string => {
-    const notas = aluno.notasNumericas || {};
-    let soma = 0;
-    let qtd = 0;
+  // ALTERADO: Calcula a nota final da UC por predominância e critério de maior valor no desempate
+  const calcularNotaPredominanteAlunoUC = (aluno: Aluno, ucId: UCId): string => {
+    const avaliacoes = aluno.avaliacoes || {};
+    const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
+    let avaliouAlguma = false;
 
     CAPACIDADES_OFICIAIS.forEach((cap) => {
       if (cap.ucId === ucId) {
-        const notaStr = notas[cap.id];
-        if (notaStr && notaStr.trim() !== '') {
-          const valorFloat = parseFloat(notaStr.replace(',', '.'));
-          if (!isNaN(valorFloat)) {
-            soma += valorFloat;
-            qtd += 1;
-          }
+        const r = avaliacoes[cap.id];
+        if (r === 'NSA' || r === 'APO' || r === 'PAR' || r === 'AUT') {
+          contagem[r]++;
+          avaliouAlguma = true;
         }
       }
     });
 
-    if (qtd > 0) {
-      const media = soma / qtd;
-      // Realiza o arredondamento matemático para o inteiro mais próximo
-      return String(Math.round(media));
-    }
-    return '-';
+    if (!avaliouAlguma) return '-';
+
+    // Ordem crescente: se houver empate em quantidades, o loop passa por último pela maior e substitui
+    const ordemHierarquica: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
+    let rubricaVencedora: NivelDesempenho = 'NSA';
+    let maxContagem = -1;
+
+    ordemHierarquica.forEach((nivel) => {
+      const qtd = contagem[nivel];
+      if (qtd >= maxContagem && qtd > 0) {
+        maxContagem = qtd;
+        rubricaVencedora = nivel;
+      }
+    });
+
+    const notasMapeadas: Record<NivelDesempenho, string> = {
+      NSA: '25',
+      APO: '45',
+      PAR: '80',
+      AUT: '100'
+    };
+
+    return notasMapeadas[rubricaVencedora];
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -150,9 +164,7 @@ export default function App() {
     }
   }, []);
 
-  // AUTOMATIZADO: Define a rubrica e injeta automaticamente a nota proporcional no banco
   const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadId: string, nivel: NivelDesempenho | '') => {
-    // Mapeamento automático de notas com base na rubrica selecionada
     let notaAutomatica = '';
     if (nivel === 'NSA') notaAutomatica = '25';
     else if (nivel === 'APO') notaAutomatica = '45';
@@ -185,7 +197,7 @@ export default function App() {
         [`observacoes.${capacidadId}`]: texto
       });
     } catch (error) {
-      console.error("Erro ao salvar observação:", error);
+      console.error("Erro ao salvar observation:", error);
     }
   }, []);
 
@@ -218,7 +230,6 @@ export default function App() {
     return (valor / somaGeralAbsoluta) * 100;
   };
 
-  // Função auxiliar para retornar as cores das rubricas e notas de forma idêntica ao sistema
   const getCorEstiloRubrica = (nivel: string) => {
     switch (nivel) {
       case 'NSA': return 'text-red-600 font-black';
@@ -251,7 +262,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Tabela 1: Notas e Rubricas Nominais */}
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -264,7 +274,7 @@ export default function App() {
                 </th>
               ))}
               <th className="text-center uppercase w-24 text-[10px] font-black text-blue-800 bg-slate-50/80 border-l border-slate-200">
-                MÉDIA FINAL
+                NOTA FINAL
               </th>
             </tr>
           </thead>
@@ -292,15 +302,15 @@ export default function App() {
                     </td>
                   );
                 })}
+                {/* ATUALIZADO: Exibe o resultado com base no cálculo estatístico de predominância */}
                 <td className="text-center font-black text-xs text-blue-900 bg-slate-50/50 border border-slate-200">
-                  {calcularMediaAlunoUC(aluno, ucAtiva)}
+                  {calcularNotaPredominanteAlunoUC(aluno, ucAtiva)}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* Tabela 2: Legenda Detalhada de Capacidades Técnicas */}
         <div className="mt-8 border-t-2 border-slate-200 pt-4 avoiding-page-break">
           <h3 className="text-[10px] font-black uppercase text-[#004fa3] tracking-wider mb-2">
             Legenda de Competências e Capacidades Técnicas Avaliadas
@@ -387,8 +397,6 @@ export default function App() {
               </div>
             </header>
 
-            <header />
-
             <main className="p-8 max-w-[1600px] mx-auto">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                 <div className="flex items-center gap-3">
@@ -409,12 +417,11 @@ export default function App() {
                     capacidade={cap} 
                     contagemRubricas={getContagemRubricas(cap.id)} 
                     totalAlunos={alunosDaTurma.length} 
-                    onClick={() => setCapSelecionada(cap)} 
+                    onClick={() => setCapSelecionada(cap)}
                   />
                 ))}
               </div>
 
-              {/* MODAL DIÁRIO DE CLASSE */}
               {capSelecionada && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white w-full max-w-6xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -455,7 +462,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* MODAL DE ESTATÍSTICAS */}
               {verGraficos && (
                 <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                   <div className="bg-white w-full max-w-3xl rounded-[24px] shadow-2xl overflow-hidden flex flex-col">
