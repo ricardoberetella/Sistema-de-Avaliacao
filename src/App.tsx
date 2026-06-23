@@ -290,24 +290,19 @@ export default function App() {
                   <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                   {capacitiesFiltradas.map(cap => {
                     const rubrica = aluno.avaliacoes?.[cap.id] || '-';
-                    const notaStr = aluno.notasNumericas?.[cap.id] || '';
                     
                     return (
                       <td key={cap.id} className="text-center py-1 border border-slate-200">
                         <div className="flex flex-col items-center justify-center min-h-[28px]">
+                          {/* ATUALIZADO: Mostra exclusivamente a rubrica, sem a nota numérica abaixo */}
                           <span className={`text-xs ${getCorEstiloRubrica(rubrica)}`}>
                             {rubrica}
                           </span>
-                          {notaStr && (
-                            <span className={`text-[9px] px-1 rounded-sm mt-0.5 bg-slate-100 font-black ${getCorEstiloRubrica(rubrica)}`}>
-                              {notaStr}
-                            </span>
-                          )}
                         </div>
                       </td>
                     );
                   })}
-                  {/* ALTERADO: Coluna Final agora exibe Rubrica e Nota de forma empilhada seguindo o padrão oficial */}
+                  {/* Mantido com a Rubrica e Nota acopladas de forma estruturada */}
                   <td className="text-center py-1 bg-slate-50/50 border border-slate-200 font-black">
                     <div className="flex flex-col items-center justify-center min-h-[28px]">
                       <span className={`text-xs ${getCorEstiloRubrica(resFinal.rubrica)}`}>
