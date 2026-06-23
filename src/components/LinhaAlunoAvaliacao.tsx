@@ -31,10 +31,15 @@ export default function LinhaAlunoAvaliacao({
 
   const rubricas: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
-  // Nova função baseada na predominância com desempate pela maior nota
+  // Gera o resumo de Rubrica e Nota por Predominância para cada UC do Aluno
   const obterResultadoPorPredominanciaUC = () => {
     const avaliacoes = aluno.avaliacoes || {};
-    const resultado: Record<string, string> = { FUSI: '-', CRD: '-', LIDT: '-', CIEMA: '-' };
+    const resultado: Record<string, { rubrica: string; nota: string }> = {
+      FUSI: { rubrica: '-', nota: '-' },
+      CRD: { rubrica: '-', nota: '-' },
+      LIDT: { rubrica: '-', nota: '-' },
+      CIEMA: { rubrica: '-', nota: '-' }
+    };
 
     const ucs = ['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const;
 
@@ -52,26 +57,20 @@ export default function LinhaAlunoAvaliacao({
         }
       });
 
-      if (!avaliouAlguma) {
-        resultado[ucId] = '-';
-        return;
-      }
+      if (!avaliouAlguma) return;
 
-      // Ordem de importância inversa para garantir que o desempate mantenha a MAIOR rubrica
       const ordemHierarquica: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
       let rubricaVencedora: NivelDesempenho = 'NSA';
       let maxContagem = -1;
 
       ordemHierarquica.forEach((nivel) => {
         const qtd = contagem[nivel];
-        // O ">=" garante o desempate a favor do maior se houver igualdade
         if (qtd >= maxContagem && qtd > 0) {
           maxContagem = qtd;
           rubricaVencedora = nivel;
         }
       });
 
-      // Mapeia o resultado final da UC para a nota correspondente
       const notasMapeadas: Record<NivelDesempenho, string> = {
         NSA: '25',
         APO: '45',
@@ -79,13 +78,16 @@ export default function LinhaAlunoAvaliacao({
         AUT: '100'
       };
 
-      resultado[ucId] = maxContagem > -1 ? notasMapeadas[rubricaVencedora] : '-';
+      resultado[ucId] = {
+        rubrica: rubricaVencedora,
+        nota: notasMapeadas[rubricaVencedora]
+      };
     });
 
     return resultado;
   };
 
-  const notasFinaisUC = obterResultadoPorPredominanciaUC();
+  const resultadosUcs = obterResultadoPorPredominanciaUC();
 
   const getCorRubrica = (nivel: NivelDesempenho) => {
     switch (nivel) {
@@ -123,7 +125,7 @@ export default function LinhaAlunoAvaliacao({
     const novaNota = obterNotaPorRubrica(novoNivel);
 
     handleDefinirRubrica(aluno.id, capacidadeId, novoNivel);
-    handleMudarNotaNumerica(aluno.id, capacidadeId, novaNota);
+    handleMudarNotaNumerica(aluno.id, capacidadId, novaNota);
   };
 
   return (
@@ -139,12 +141,19 @@ export default function LinhaAlunoAvaliacao({
           </h4>
         </div>
 
-        {/* Bloco de Notas Finais Baseadas na Predominância */}
+        {/* Bloco de Resultados Finais Detalhados das UCs no Diário */}
         <div className="flex flex-wrap gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
           {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const).map((uc) => (
-            <div key={uc} className="text-center px-2.5 py-1 bg-white rounded-lg shadow-2xs border border-slate-200/60">
+            <div key={uc} className="text-center px-3 py-1 bg-white rounded-lg shadow-2xs border border-slate-200/60 min-w-[54px]">
               <span className="text-[9px] font-black text-slate-400 block tracking-tight">{uc}</span>
-              <span className="text-xs font-black text-slate-700">{notasFinaisUC[uc]}</span>
+              <div className="flex flex-col items-center justify-center mt-0.5 leading-none">
+                <span className={`text-[10px] font-black ${getCorTextoRubrica(resultadosUcs[uc].rubrica)}`}>
+                  {resultadosUcs[uc].rubrica}
+                </span>
+                <span className="text-[9px] font-bold text-slate-500 mt-0.5">
+                  {resultadosUcs[uc].nota}
+                </span>
+              </div>
             </div>
           ))}
         </div>
