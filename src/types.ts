@@ -1,7 +1,8 @@
 // src/types.ts
 
 export type TurmaId = 'MA' | 'MB' | 'TA' | 'TB';
-export type UCId = 'FUSI' | 'CRD' | 'LIDT' | 'CIEMA';
+// Atualizado: 'MAP' incluído na lista de Unidades Curriculares
+export type UCId = 'FUSI' | 'CRD' | 'LIDT' | 'CIEMA' | 'MAP';
 
 export interface CapacidadeTecnica {
   id: string;
