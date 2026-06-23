@@ -28,11 +28,13 @@ export default function App() {
     .filter(a => a.turmaId === turmaAtiva)
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
+  // Atualizado: Adicionado o nome por extenso para MAP
   const nomesUC: Record<UCId, string> = {
     FUSI: 'Fundamentos da Usinagem',
     CRD: 'Controle Dimensional',
     LIDT: 'Leitura e Interpretação de Desenho Técnico',
-    CIEMA: 'Ciência dos Materiais e Metrologia'
+    CIEMA: 'Ciência dos Materiais e Metrologia',
+    MAP: 'Matemática Aplicada'
   };
 
   // Calcula a rubrica e a nota final da UC por predominância e desempate pelo maior valor
@@ -294,7 +296,6 @@ export default function App() {
                     return (
                       <td key={cap.id} className="text-center py-1 border border-slate-200">
                         <div className="flex flex-col items-center justify-center min-h-[28px]">
-                          {/* ATUALIZADO: Mostra exclusivamente a rubrica, sem a nota numérica abaixo */}
                           <span className={`text-xs ${getCorEstiloRubrica(rubrica)}`}>
                             {rubrica}
                           </span>
@@ -302,7 +303,6 @@ export default function App() {
                       </td>
                     );
                   })}
-                  {/* Mantido com a Rubrica e Nota acopladas de forma estruturada */}
                   <td className="text-center py-1 bg-slate-50/50 border border-slate-200 font-black">
                     <div className="flex flex-col items-center justify-center min-h-[28px]">
                       <span className={`text-xs ${getCorEstiloRubrica(resFinal.rubrica)}`}>
@@ -379,7 +379,8 @@ export default function App() {
                   <div className="text-blue-200 text-xs font-black uppercase tracking-wider">Mecânico de Usinagem Convencional</div>
                   <h1 className="text-lg md:text-xl font-black uppercase mt-0.5">Sistema de Avaliação</h1>
                   <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
-                    {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as UCId[]).map((sigla) => (
+                    {/* Atualizado: Incluída a sigla 'MAP' no mapeamento de botões de navegação */}
+                    {(['FUSI', 'CRD', 'LIDT', 'CIEMA', 'MAP'] as UCId[]).map((sigla) => (
                       <button 
                         key={sigla}
                         onClick={() => { setUcAtiva(sigla); setCapSelecionada(null); }}
