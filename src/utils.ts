@@ -35,7 +35,13 @@ export const CAPACIDADES_OFICIAIS: CapacidadeTecnica[] = [
   { id: 'fusi-9', ucId: 'FUSI', codigo: 'FUSI - CAP. 9', descricao: 'Realizar operações de rosqueamento de acordo com as especificações, normas técnicas e de saúde e segurança no trabalho.' },
   { id: 'fusi-10', ucId: 'FUSI', codigo: 'FUSI - CAP. 10', descricao: 'Realizar operações de ajustagem em peças por meio de ferramentas manuais de acordo com as especificações e normas técnicas e de saúde e segurança no trabalho.' },
   { id: 'fusi-11', ucId: 'FUSI', codigo: 'FUSI - CAP. 11', descricao: 'Controlar a qualidade das peças usinadas em tornos e fresadoras convencionais, visualmente e por meio de instrumentos de acordo com as especificações técnicas.' },
-  { id: 'fusi-12', ucId: 'FUSI', codigo: 'FUSI - CAP. 12', descricao: 'Aplicar os procedimentos de refrigeração nos processos de torneamento e fresagem convencional.' }
+  { id: 'fusi-12', ucId: 'FUSI', codigo: 'FUSI - CAP. 12', descricao: 'Aplicar os procedimentos de refrigeração nos processos de torneamento e fresagem convencional.' },
+
+  // MAP - Matemática Aplicada
+  { id: 'map-1', ucId: 'MAP', codigo: 'MAP - CAP. 1', descricao: 'Realizar cálculos matemáticos básicos aplicados a processos mecânicos e operacionais.' },
+  { id: 'map-2', ucId: 'MAP', codigo: 'MAP - CAP. 2', descricao: 'Realizar cálculos com figuras e sólidos geométricos para determinação de áreas, volumes e perímetros.' },
+  { id: 'map-3', ucId: 'MAP', codigo: 'MAP - CAP. 3', descricao: 'Realizar cálculos trigonométricos em triângulos retângulos aplicados a inclinações e coordenadas de usinagem.' },
+  { id: 'map-4', ucId: 'MAP', codigo: 'MAP - CAP. 4', descricao: 'Realizar cálculos de conversão de unidades de medida (sistema métrico e polegadas).' }
 ];
 
 export function getDescricaoRubrica(capacidadeId: string, nivel: NivelDesempenho): string {
