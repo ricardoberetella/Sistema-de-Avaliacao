@@ -31,42 +31,61 @@ export default function LinhaAlunoAvaliacao({
 
   const rubricas: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
-  // Função interna para calcular a média de cada Unidade Curricular do aluno
-  const obtenerMediasPorUC = () => {
-    const notas = aluno.notasNumericas || {};
-    const acumulador: Record<string, { soma: number; qtd: number }> = {
-      FUSI: { soma: 0, qtd: 0 },
-      CRD: { soma: 0, qtd: 0 },
-      LIDT: { soma: 0, qtd: 0 },
-      CIEMA: { soma: 0, qtd: 0 },
-    };
+  // Nova função baseada na predominância com desempate pela maior nota
+  const obterResultadoPorPredominanciaUC = () => {
+    const avaliacoes = aluno.avaliacoes || {};
+    const resultado: Record<string, string> = { FUSI: '-', CRD: '-', LIDT: '-', CIEMA: '-' };
 
-    CAPACIDADES_OFICIAIS.forEach((cap) => {
-      const notaStr = notas[cap.id];
-      if (notaStr && notaStr.trim() !== '') {
-        const valorFloat = parseFloat(notaStr.replace(',', '.'));
-        if (!isNaN(valorFloat) && acumulador[cap.ucId]) {
-          acumulador[cap.ucId].soma += valorFloat;
-          acumulador[cap.ucId].qtd += 1;
+    const ucs = ['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const;
+
+    ucs.forEach((ucId) => {
+      const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
+      let avaliouAlguma = false;
+
+      CAPACIDADES_OFICIAIS.forEach((cap) => {
+        if (cap.ucId === ucId) {
+          const r = avaliacoes[cap.id];
+          if (r === 'NSA' || r === 'APO' || r === 'PAR' || r === 'AUT') {
+            contagem[r]++;
+            avaliouAlguma = true;
+          }
         }
-      }
-    });
+      });
 
-    const resultado: Record<string, string> = {};
-    Object.keys(acumulador).forEach((uc) => {
-      const dados = acumulador[uc];
-      if (dados.qtd > 0) {
-        const media = dados.soma / dados.qtd;
-        resultado[uc] = String(Math.round(media));
-      } else {
-        resultado[uc] = '-';
+      if (!avaliouAlguma) {
+        resultado[ucId] = '-';
+        return;
       }
+
+      // Ordem de importância inversa para garantir que o desempate mantenha a MAIOR rubrica
+      const ordemHierarquica: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
+      let rubricaVencedora: NivelDesempenho = 'NSA';
+      let maxContagem = -1;
+
+      ordemHierarquica.forEach((nivel) => {
+        const qtd = contagem[nivel];
+        // O ">=" garante o desempate a favor do maior se houver igualdade
+        if (qtd >= maxContagem && qtd > 0) {
+          maxContagem = qtd;
+          rubricaVencedora = nivel;
+        }
+      });
+
+      // Mapeia o resultado final da UC para a nota correspondente
+      const notasMapeadas: Record<NivelDesempenho, string> = {
+        NSA: '25',
+        APO: '45',
+        PAR: '80',
+        AUT: '100'
+      };
+
+      resultado[ucId] = maxContagem > -1 ? notasMapeadas[rubricaVencedora] : '-';
     });
 
     return resultado;
   };
 
-  const medias = obtenerMediasPorUC();
+  const notasFinaisUC = obterResultadoPorPredominanciaUC();
 
   const getCorRubrica = (nivel: NivelDesempenho) => {
     switch (nivel) {
@@ -88,7 +107,6 @@ export default function LinhaAlunoAvaliacao({
     }
   };
 
-  // Mapeamento de notas baseado na rubrica selecionada
   const obterNotaPorRubrica = (nivel: NivelDesempenho | '') => {
     switch (nivel) {
       case 'NSA': return '25';
@@ -99,7 +117,6 @@ export default function LinhaAlunoAvaliacao({
     }
   };
 
-  // Centraliza o clique para despachar a rubrica e a nota equivalente ao mesmo tempo
   const handleCliqueRubrica = (nivel: NivelDesempenho) => {
     const jaEstaAtivo = rubricaAtual === nivel;
     const novoNivel = jaEstaAtivo ? '' : nivel;
@@ -122,12 +139,12 @@ export default function LinhaAlunoAvaliacao({
           </h4>
         </div>
 
-        {/* Bloco de Médias por UC */}
+        {/* Bloco de Notas Finais Baseadas na Predominância */}
         <div className="flex flex-wrap gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
           {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const).map((uc) => (
             <div key={uc} className="text-center px-2.5 py-1 bg-white rounded-lg shadow-2xs border border-slate-200/60">
               <span className="text-[9px] font-black text-slate-400 block tracking-tight">{uc}</span>
-              <span className="text-xs font-black text-slate-700">{medias[uc]}</span>
+              <span className="text-xs font-black text-slate-700">{notasFinaisUC[uc]}</span>
             </div>
           ))}
         </div>
@@ -171,7 +188,6 @@ export default function LinhaAlunoAvaliacao({
           })}
         </div>
 
-        {/* Campo de Nota Automática Atualizado */}
         <div className="flex items-center gap-2 bg-slate-50 px-4 h-9 rounded-xl border border-slate-200">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
             Nota Automática:
@@ -189,7 +205,7 @@ export default function LinhaAlunoAvaliacao({
         </label>
         <textarea
           value={observacao}
-          onChange={(e) => handleMudarObservacao(aluno.id, capacidadId, e.target.value)}
+          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full min-h-[70px] p-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 resize-y focus:outline-none"
         />
