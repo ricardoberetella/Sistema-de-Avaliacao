@@ -17,7 +17,7 @@ interface LinhaAlunoAvaliacaoProps {
 // Listas e mapas isolados fora do componente para otimização de memória
 const RUBRICAS_LISTA: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
-// Mantido 'MAPA' conforme a estrutura atual do seu sistema
+// Alterado de 'MAPA' para 'MAP'
 const UCS_LISTA = ['FUSI', 'CRD', 'LIDT', 'MAP'] as const;
 
 const NOTAS_MAPEADAS: Record<NivelDesempenho, string> = {
@@ -42,11 +42,10 @@ export default function LinhaAlunoAvaliacao({
   const notaNumerica = aluno.notasNumericas?.[capacidadeId] || '';
   const observacao = aluno.observacoes?.[capacidadeId] || '';
 
-  // useMemo impede que o cálculo de predominância rode a cada caractere digitado nas observações
   const resultadosUcs = useMemo(() => {
     const avaliacoes = aluno.avaliacoes || {};
     
-    // Inicialização da estrutura de resultados garantindo o 'MAPA'
+    // Inicialização da estrutura trocada para MAP
     const resultado: Record<string, { rubrica: string; nota: string }> = {
       FUSI: { rubrica: '-', nota: '-' },
       CRD: { rubrica: '-', nota: '-' },
@@ -58,7 +57,6 @@ export default function LinhaAlunoAvaliacao({
       const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
       let avaliouAlguma = false;
 
-      // Percorre as capacidades oficiais associando-as à respectiva UC
       CAPACIDADES_OFICIAIS.forEach((cap) => {
         if (cap.ucId === ucId) {
           const r = avaliacoes[cap.id];
@@ -74,7 +72,6 @@ export default function LinhaAlunoAvaliacao({
       let rubricaVencedora: NivelDesempenho = 'NSA';
       let maxContagem = -1;
 
-      // Define o nível com maior frequência na UC
       RUBRICAS_LISTA.forEach((nivel) => {
         const qtd = contagem[nivel];
         if (qtd >= maxContagem && qtd > 0) {
@@ -124,7 +121,6 @@ export default function LinhaAlunoAvaliacao({
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
       
-      {/* Cabeçalho da Linha do Aluno */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Estudante</span>
@@ -134,7 +130,6 @@ export default function LinhaAlunoAvaliacao({
           </h4>
         </div>
 
-        {/* Bloco de Resultados Finais Detalhados das UCs no Diário */}
         <div className="flex flex-wrap gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
           {UCS_LISTA.map((uc) => (
             <div key={uc} className="text-center px-3 py-1 bg-white rounded-lg shadow-2xs border border-slate-200/60 min-w-[54px]">
@@ -151,7 +146,6 @@ export default function LinhaAlunoAvaliacao({
           ))}
         </div>
 
-        {/* Botões de Ação */}
         <div className="flex items-center gap-2 self-start lg:self-center">
           <button
             type="button"
@@ -170,7 +164,6 @@ export default function LinhaAlunoAvaliacao({
         </div>
       </div>
 
-      {/* Controles de Notas e Rubricas */}
       <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-slate-100">
         <div className="flex items-center gap-1.5">
           {RUBRICAS_LISTA.map((nivel) => {
@@ -200,7 +193,6 @@ export default function LinhaAlunoAvaliacao({
         </div>
       </div>
 
-      {/* Campo de Evidências */}
       <div className="space-y-1">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
           Evidências / Observações de Desempenho
