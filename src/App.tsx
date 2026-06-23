@@ -35,8 +35,8 @@ export default function App() {
     CIEMA: 'Ciência dos Materiais e Metrologia'
   };
 
-  // ALTERADO: Calcula a nota final da UC por predominância e critério de maior valor no desempate
-  const calcularNotaPredominanteAlunoUC = (aluno: Aluno, ucId: UCId): string => {
+  // Calcula a rubrica e a nota final da UC por predominância e desempate pelo maior valor
+  const calcularResultadoPredominanteAlunoUC = (aluno: Aluno, ucId: UCId): { rubrica: string; nota: string } => {
     const avaliacoes = aluno.avaliacoes || {};
     const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
     let avaliouAlguma = false;
@@ -51,9 +51,9 @@ export default function App() {
       }
     });
 
-    if (!avaliouAlguma) return '-';
+    if (!avaliouAlguma) return { rubrica: '-', nota: '-' };
 
-    // Ordem crescente: se houver empate em quantidades, o loop passa por último pela maior e substitui
+    // Ordem crescente: se houver empate, a iteração mantém a maior rubrica avaliada
     const ordemHierarquica: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
     let rubricaVencedora: NivelDesempenho = 'NSA';
     let maxContagem = -1;
@@ -66,14 +66,17 @@ export default function App() {
       }
     });
 
-    const notasMapeadas: Record<NivelDesempenho, string> = {
+    const BureauNotas: Record<NivelDesempenho, string> = {
       NSA: '25',
       APO: '45',
       PAR: '80',
       AUT: '100'
     };
 
-    return notasMapeadas[rubricaVencedora];
+    return {
+      rubrica: rubricaVencedora,
+      nota: BureauNotas[rubricaVencedora]
+    };
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -197,7 +200,7 @@ export default function App() {
         [`observacoes.${capacidadId}`]: texto
       });
     } catch (error) {
-      console.error("Erro ao salvar observation:", error);
+      console.error("Erro ao salvar observação:", error);
     }
   }, []);
 
@@ -274,40 +277,52 @@ export default function App() {
                 </th>
               ))}
               <th className="text-center uppercase w-24 text-[10px] font-black text-blue-800 bg-slate-50/80 border-l border-slate-200">
-                NOTA FINAL
+                RESULTADO FINAL
               </th>
             </tr>
           </thead>
           <tbody>
-            {alunosDaTurma.map((aluno, idx) => (
-              <tr key={aluno.id}>
-                <td className="font-bold text-slate-500 text-xs tracking-tight text-left">{String(idx + 1).padStart(2, '0')}</td>
-                <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
-                {capacitiesFiltradas.map(cap => {
-                  const rubrica = aluno.avaliacoes?.[cap.id] || '-';
-                  const notaStr = aluno.notasNumericas?.[cap.id] || '';
-                  
-                  return (
-                    <td key={cap.id} className="text-center py-1 border border-slate-200">
-                      <div className="flex flex-col items-center justify-center min-h-[28px]">
-                        <span className={`text-xs ${getCorEstiloRubrica(rubrica)}`}>
-                          {rubrica}
-                        </span>
-                        {notaStr && (
-                          <span className={`text-[9px] px-1 rounded-sm mt-0.5 bg-slate-100 font-black ${getCorEstiloRubrica(rubrica)}`}>
-                            {notaStr}
+            {alunosDaTurma.map((aluno, idx) => {
+              const resFinal = calcularResultadoPredominanteAlunoUC(aluno, ucAtiva);
+              return (
+                <tr key={aluno.id}>
+                  <td className="font-bold text-slate-500 text-xs tracking-tight text-left">{String(idx + 1).padStart(2, '0')}</td>
+                  <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
+                  {capacitiesFiltradas.map(cap => {
+                    const rubrica = aluno.avaliacoes?.[cap.id] || '-';
+                    const notaStr = aluno.notasNumericas?.[cap.id] || '';
+                    
+                    return (
+                      <td key={cap.id} className="text-center py-1 border border-slate-200">
+                        <div className="flex flex-col items-center justify-center min-h-[28px]">
+                          <span className={`text-xs ${getCorEstiloRubrica(rubrica)}`}>
+                            {rubrica}
                           </span>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-                {/* ATUALIZADO: Exibe o resultado com base no cálculo estatístico de predominância */}
-                <td className="text-center font-black text-xs text-blue-900 bg-slate-50/50 border border-slate-200">
-                  {calcularNotaPredominanteAlunoUC(aluno, ucAtiva)}
-                </td>
-              </tr>
-            ))}
+                          {notaStr && (
+                            <span className={`text-[9px] px-1 rounded-sm mt-0.5 bg-slate-100 font-black ${getCorEstiloRubrica(rubrica)}`}>
+                              {notaStr}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                  {/* ALTERADO: Coluna Final agora exibe Rubrica e Nota de forma empilhada seguindo o padrão oficial */}
+                  <td className="text-center py-1 bg-slate-50/50 border border-slate-200 font-black">
+                    <div className="flex flex-col items-center justify-center min-h-[28px]">
+                      <span className={`text-xs ${getCorEstiloRubrica(resFinal.rubrica)}`}>
+                        {resFinal.rubrica}
+                      </span>
+                      {resFinal.nota !== '-' && (
+                        <span className={`text-[9px] px-1 rounded-sm mt-0.5 bg-slate-100 font-black ${getCorEstiloRubrica(resFinal.rubrica)}`}>
+                          {resFinal.nota}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
