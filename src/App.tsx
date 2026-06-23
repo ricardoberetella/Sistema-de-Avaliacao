@@ -150,13 +150,22 @@ export default function App() {
     }
   }, []);
 
+  // AUTOMATIZADO: Define a rubrica e injeta automaticamente a nota proporcional no banco
   const handleDefinirRubrica = useCallback(async (alunoId: string, capacidadId: string, nivel: NivelDesempenho | '') => {
+    // Mapeamento automático de notas com base na rubrica selecionada
+    let notaAutomatica = '';
+    if (nivel === 'NSA') notaAutomatica = '25';
+    else if (nivel === 'APO') notaAutomatica = '45';
+    else if (nivel === 'PAR') notaAutomatica = '80';
+    else if (nivel === 'AUT') notaAutomatica = '100';
+
     try {
       await updateDoc(doc(db, 'alunos', alunoId), {
-        [`avaliacoes.${capacidadId}`]: nivel
+        [`avaliacoes.${capacidadId}`]: nivel,
+        [`notasNumericas.${capacidadId}`]: notaAutomatica
       });
     } catch (error) {
-      console.error("Erro ao atualizar rubrica:", error);
+      console.error("Erro ao atualizar rubrica e nota:", error);
     }
   }, []);
 
@@ -266,7 +275,6 @@ export default function App() {
                 <td className="font-bold uppercase tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{aluno.nome}</td>
                 {capacitiesFiltradas.map(cap => {
                   const rubrica = aluno.avaliacoes?.[cap.id] || '-';
-                  // CORRIGIDO: Modificado de notesNumericas para notasNumericas
                   const notaStr = aluno.notasNumericas?.[cap.id] || '';
                   
                   return (
@@ -436,7 +444,7 @@ export default function App() {
                     
                     <div className="p-4 bg-slate-100 border-t border-slate-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                       <div className="grid grid-cols-4 gap-2 flex-1 max-w-4xl text-[11px] leading-tight text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
-                        <div><span className="font-black text-red-600 block uppercase">NSA</span>Não consegue executar as operações básicas de forma satisfatória or segura.</div>
+                        <div><span className="font-black text-red-600 block uppercase">NSA</span>Não consegue executar as operações básicas de forma satisfatória ou segura.</div>
                         <div><span className="font-black text-orange-500 block uppercase">APO</span>Executa demonstrando insegurança e comete erros frequentes.</div>
                         <div><span className="font-black text-blue-600 block uppercase">PAR</span>Executa as operações, mas precisa de orientação pontual do docente.</div>
                         <div><span className="font-black text-emerald-600 block uppercase">AUT</span>Executa com total autonomia e segurança, atingindo precisão dimensional.</div>
