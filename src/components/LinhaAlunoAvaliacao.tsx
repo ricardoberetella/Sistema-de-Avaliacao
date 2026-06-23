@@ -78,7 +78,6 @@ export default function LinhaAlunoAvaliacao({
     }
   };
 
-  // Função auxiliar para estilizar o texto da nota com base na rubrica ativa
   const getCorTextoRubrica = (nivel: string | null) => {
     switch (nivel) {
       case 'NSA': return 'text-red-600';
@@ -87,6 +86,27 @@ export default function LinhaAlunoAvaliacao({
       case 'AUT': return 'text-emerald-600';
       default: return 'text-slate-400';
     }
+  };
+
+  // Mapeamento de notas baseado na rubrica selecionada
+  const obterNotaPorRubrica = (nivel: NivelDesempenho | '') => {
+    switch (nivel) {
+      case 'NSA': return '25';
+      case 'APO': return '45';
+      case 'PAR': return '80';
+      case 'AUT': return '100';
+      default: return '';
+    }
+  };
+
+  // Centraliza o clique para despachar a rubrica e a nota equivalente ao mesmo tempo
+  const handleCliqueRubrica = (nivel: NivelDesempenho) => {
+    const jaEstaAtivo = rubricaAtual === nivel;
+    const novoNivel = jaEstaAtivo ? '' : nivel;
+    const novaNota = obterNotaPorRubrica(novoNivel);
+
+    handleDefinirRubrica(aluno.id, capacidadeId, novoNivel);
+    handleMudarNotaNumerica(aluno.id, capacidadeId, novaNota);
   };
 
   return (
@@ -140,7 +160,7 @@ export default function LinhaAlunoAvaliacao({
               <button
                 key={nivel}
                 type="button"
-                onClick={() => handleDefinirRubrica(aluno.id, capacidadId, ativo ? '' : nivel)}
+                onClick={() => handleCliqueRubrica(nivel)}
                 className={`w-14 h-9 font-black text-xs rounded-xl border-2 uppercase transition-all ${
                   ativo ? getCorRubrica(nivel) : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
                 }`}
@@ -151,7 +171,7 @@ export default function LinhaAlunoAvaliacao({
           })}
         </div>
 
-        {/* ALTERADO: Campo de Nota agora é estritamente automático e visual (apenas leitura) */}
+        {/* Campo de Nota Automática Atualizado */}
         <div className="flex items-center gap-2 bg-slate-50 px-4 h-9 rounded-xl border border-slate-200">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
             Nota Automática:
@@ -169,7 +189,7 @@ export default function LinhaAlunoAvaliacao({
         </label>
         <textarea
           value={observacao}
-          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
+          onChange={(e) => handleMudarObservacao(aluno.id, capacidadId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full min-h-[70px] p-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 resize-y focus:outline-none"
         />
