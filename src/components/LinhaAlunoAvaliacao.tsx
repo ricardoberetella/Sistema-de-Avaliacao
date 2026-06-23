@@ -1,5 +1,5 @@
 // src/components/LinhaAlunoAvaliacao.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Aluno, NivelDesempenho } from '../types';
 import { CAPACIDADES_OFICIAIS } from '../utils';
 
@@ -13,6 +13,17 @@ interface LinhaAlunoAvaliacaoProps {
   handleMudarNotaNumerica: (alunoId: string, capacidadeId: string, valor: string) => void;
   handleMudarObservacao: (alunoId: string, capacidadeId: string, texto: string) => void;
 }
+
+// Constantes movidas para fora do componente para evitar recriação em memória
+const RUBRICAS_LISTA: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
+const UCS_LISTA = ['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const;
+
+const NOTAS_MAPEADAS: Record<NivelDesempenho, string> = {
+  NSA: '25',
+  APO: '45',
+  PAR: '80',
+  AUT: '100'
+};
 
 export default function LinhaAlunoAvaliacao({
   aluno,
@@ -29,10 +40,8 @@ export default function LinhaAlunoAvaliacao({
   const notaNumerica = aluno.notasNumericas?.[capacidadeId] || '';
   const observacao = aluno.observacoes?.[capacidadeId] || '';
 
-  const rubricas: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
-
-  // Gera o resumo de Rubrica e Nota por Predominância para cada UC do Aluno
-  const obterResultadoPorPredominanciaUC = () => {
+  // Otimização com useMemo: Só recalcula a predominância se as avaliações deste aluno mudarem
+  const resultadosUcs = useMemo(() => {
     const avaliacoes = aluno.avaliacoes || {};
     const resultado: Record<string, { rubrica: string; nota: string }> = {
       FUSI: { rubrica: '-', nota: '-' },
@@ -41,9 +50,7 @@ export default function LinhaAlunoAvaliacao({
       CIEMA: { rubrica: '-', nota: '-' }
     };
 
-    const ucs = ['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const;
-
-    ucs.forEach((ucId) => {
+    UCS_LISTA.forEach((ucId) => {
       const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
       let avaliouAlguma = false;
 
@@ -59,11 +66,10 @@ export default function LinhaAlunoAvaliacao({
 
       if (!avaliouAlguma) return;
 
-      const ordemHierarquica: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
       let rubricaVencedora: NivelDesempenho = 'NSA';
       let maxContagem = -1;
 
-      ordemHierarquica.forEach((nivel) => {
+      RUBRICAS_LISTA.forEach((nivel) => {
         const qtd = contagem[nivel];
         if (qtd >= maxContagem && qtd > 0) {
           maxContagem = qtd;
@@ -71,23 +77,14 @@ export default function LinhaAlunoAvaliacao({
         }
       });
 
-      const notasMapeadas: Record<NivelDesempenho, string> = {
-        NSA: '25',
-        APO: '45',
-        PAR: '80',
-        AUT: '100'
-      };
-
       resultado[ucId] = {
         rubrica: rubricaVencedora,
-        nota: notasMapeadas[rubricaVencedora]
+        nota: NOTAS_MAPEADAS[rubricaVencedora]
       };
     });
 
     return resultado;
-  };
-
-  const resultadosUcs = obterResultadoPorPredominanciaUC();
+  }, [aluno.avaliacoes]);
 
   const getCorRubrica = (nivel: NivelDesempenho) => {
     switch (nivel) {
@@ -109,23 +106,13 @@ export default function LinhaAlunoAvaliacao({
     }
   };
 
-  const obterNotaPorRubrica = (nivel: NivelDesempenho | '') => {
-    switch (nivel) {
-      case 'NSA': return '25';
-      case 'APO': return '45';
-      case 'PAR': return '80';
-      case 'AUT': return '100';
-      default: return '';
-    }
-  };
-
   const handleCliqueRubrica = (nivel: NivelDesempenho) => {
     const jaEstaAtivo = rubricaAtual === nivel;
     const novoNivel = jaEstaAtivo ? '' : nivel;
-    const novaNota = obterNotaPorRubrica(novoNivel);
+    const novaNota = novoNivel ? NOTAS_MAPEADAS[novoNivel] : '';
 
     handleDefinirRubrica(aluno.id, capacidadeId, novoNivel);
-    handleMudarNotaNumerica(aluno.id, capacidadId, novaNota);
+    handleMudarNotaNumerica(aluno.id, capacidadeId, novaNota); //  Corrigido aqui: capacidadeId com "e"
   };
 
   return (
@@ -143,7 +130,7 @@ export default function LinhaAlunoAvaliacao({
 
         {/* Bloco de Resultados Finais Detalhados das UCs no Diário */}
         <div className="flex flex-wrap gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-          {(['FUSI', 'CRD', 'LIDT', 'CIEMA'] as const).map((uc) => (
+          {UCS_LISTA.map((uc) => (
             <div key={uc} className="text-center px-3 py-1 bg-white rounded-lg shadow-2xs border border-slate-200/60 min-w-[54px]">
               <span className="text-[9px] font-black text-slate-400 block tracking-tight">{uc}</span>
               <div className="flex flex-col items-center justify-center mt-0.5 leading-none">
@@ -180,7 +167,7 @@ export default function LinhaAlunoAvaliacao({
       {/* Controles de Notas e Rubricas */}
       <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-slate-100">
         <div className="flex items-center gap-1.5">
-          {rubricas.map((nivel) => {
+          {RUBRICAS_LISTA.map((nivel) => {
             const ativo = rubricaAtual === nivel;
             return (
               <button
