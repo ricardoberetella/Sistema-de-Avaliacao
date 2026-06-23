@@ -2,7 +2,6 @@
 import React from 'react';
 import { Aluno, NivelDesempenho } from '../types';
 import { CAPACIDADES_OFICIAIS } from '../utils';
-import InputNota from './InputNota';
 
 interface LinhaAlunoAvaliacaoProps {
   aluno: Aluno;
@@ -58,7 +57,6 @@ export default function LinhaAlunoAvaliacao({
       const dados = acumulador[uc];
       if (dados.qtd > 0) {
         const media = dados.soma / dados.qtd;
-        // Modificado para arredondar sem casas decimais, mantendo a consistência com o relatório PDF
         resultado[uc] = String(Math.round(media));
       } else {
         resultado[uc] = '-';
@@ -77,6 +75,17 @@ export default function LinhaAlunoAvaliacao({
       case 'PAR': return 'bg-blue-600 text-white border-blue-600';
       case 'AUT': return 'bg-emerald-600 text-white border-emerald-600';
       default: return 'bg-white text-slate-600 border-slate-200';
+    }
+  };
+
+  // Função auxiliar para estilizar o texto da nota com base na rubrica ativa
+  const getCorTextoRubrica = (nivel: string | null) => {
+    switch (nivel) {
+      case 'NSA': return 'text-red-600';
+      case 'APO': return 'text-orange-500';
+      case 'PAR': return 'text-blue-600';
+      case 'AUT': return 'text-emerald-600';
+      default: return 'text-slate-400';
     }
   };
 
@@ -131,7 +140,7 @@ export default function LinhaAlunoAvaliacao({
               <button
                 key={nivel}
                 type="button"
-                onClick={() => handleDefinirRubrica(aluno.id, capacidadeId, ativo ? '' : nivel)}
+                onClick={() => handleDefinirRubrica(aluno.id, capacidadId, ativo ? '' : nivel)}
                 className={`w-14 h-9 font-black text-xs rounded-xl border-2 uppercase transition-all ${
                   ativo ? getCorRubrica(nivel) : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
                 }`}
@@ -142,14 +151,14 @@ export default function LinhaAlunoAvaliacao({
           })}
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
-            Nota Numérica (0-100):
-          </label>
-          <InputNota 
-            valorInicial={notaNumerica}
-            onSalvar={(novoValor) => handleMudarNotaNumerica(aluno.id, capacidadeId, novoValor)}
-          />
+        {/* ALTERADO: Campo de Nota agora é estritamente automático e visual (apenas leitura) */}
+        <div className="flex items-center gap-2 bg-slate-50 px-4 h-9 rounded-xl border border-slate-200">
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
+            Nota Automática:
+          </span>
+          <span className={`text-sm font-black tracking-tight min-w-[28px] text-center ${getCorTextoRubrica(rubricaAtual)}`}>
+            {notaNumerica || '-'}
+          </span>
         </div>
       </div>
 
