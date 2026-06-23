@@ -17,8 +17,8 @@ interface LinhaAlunoAvaliacaoProps {
 // Listas e mapas isolados fora do componente para otimização de memória
 const RUBRICAS_LISTA: NivelDesempenho[] = ['NSA', 'APO', 'PAR', 'AUT'];
 
-// Corrigido: Substituído 'CIEMA' por 'MAP' para representar Matemática Aplicada
-const UCS_LISTA = ['FUSI', 'CRD', 'LIDT', 'MAP'] as const;
+// Mantido 'MAPA' conforme a estrutura atual do seu sistema
+const UCS_LISTA = ['FUSI', 'CRD', 'LIDT', 'MAPA'] as const;
 
 const NOTAS_MAPEADAS: Record<NivelDesempenho, string> = {
   NSA: '25',
@@ -42,23 +42,23 @@ export default function LinhaAlunoAvaliacao({
   const notaNumerica = aluno.notasNumericas?.[capacidadeId] || '';
   const observacao = aluno.observacoes?.[capacidadeId] || '';
 
-  // useMemo evita reprocessar a predominância a cada letra digitada no campo de observações
+  // useMemo impede que o cálculo de predominância rode a cada caractere digitado nas observações
   const resultadosUcs = useMemo(() => {
     const avaliacoes = aluno.avaliacoes || {};
     
-    // Inicialização da estrutura de resultados com as siglas corretas
+    // Inicialização da estrutura de resultados garantindo o 'MAPA'
     const resultado: Record<string, { rubrica: string; nota: string }> = {
       FUSI: { rubrica: '-', nota: '-' },
       CRD: { rubrica: '-', nota: '-' },
       LIDT: { rubrica: '-', nota: '-' },
-      MAP: { rubrica: '-', nota: '-' }
+      MAPA: { rubrica: '-', nota: '-' }
     };
 
     UCS_LISTA.forEach((ucId) => {
       const contagem: Record<NivelDesempenho, number> = { NSA: 0, APO: 0, PAR: 0, AUT: 0 };
       let avaliouAlguma = false;
 
-      // Filtra e contabiliza as capacidades correspondentes à UC atual
+      // Percorre as capacidades oficiais associando-as à respectiva UC
       CAPACIDADES_OFICIAIS.forEach((cap) => {
         if (cap.ucId === ucId) {
           const r = avaliacoes[cap.id];
@@ -74,7 +74,7 @@ export default function LinhaAlunoAvaliacao({
       let rubricaVencedora: NivelDesempenho = 'NSA';
       let maxContagem = -1;
 
-      // Define a rubrica com maior recorrência (predominância)
+      // Define o nível com maior frequência na UC
       RUBRICAS_LISTA.forEach((nivel) => {
         const qtd = contagem[nivel];
         if (qtd >= maxContagem && qtd > 0) {
@@ -118,7 +118,7 @@ export default function LinhaAlunoAvaliacao({
     const novaNota = novoNivel ? NOTAS_MAPEADAS[novoNivel] : '';
 
     handleDefinirRubrica(aluno.id, capacidadeId, novoNivel);
-    handleMudarNotaNumerica(aluno.id, capacidadeId, novaNota);
+    handleMudarNotaNumerica(aluno.id, capacidadId => capacidadeId, novaNota);
   };
 
   return (
@@ -207,7 +207,7 @@ export default function LinhaAlunoAvaliacao({
         </label>
         <textarea
           value={observacao}
-          onChange={(e) => handleMudarObservacao(aluno.id, capacityId => capacidadeId, e.target.value)}
+          onChange={(e) => handleMudarObservacao(aluno.id, capacidadeId, e.target.value)}
           placeholder="Descreva pontos de atenção ou conquistas do estudante nesta capacidade técnica..."
           className="w-full min-h-[70px] p-3 bg-slate-50 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 resize-y focus:outline-none"
         />
